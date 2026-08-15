@@ -2,12 +2,20 @@
 #include <stdio.h>
 #include <string.h>
 
-static void ami_tool_reset_retail_key(AmiToolApp* app) {
-    if(!app) return;
-    memset(app->retail_key, 0, sizeof(app->retail_key));
-    app->retail_key_size = 0;
-    app->retail_key_loaded = false;
-}
+static uint8_t nfc_secrets[AMI_TOOL_RETAIL_KEY_SIZE] = {
+	0x1D, 0x16, 0x4B, 0x37, 0x5B, 0x72, 0xA5, 0x57, 0x28, 0xB9, 0x1D, 0x64, 0xB6, 0xA3, 0xC2, 0x05, 
+	0x75, 0x6E, 0x66, 0x69, 0x78, 0x65, 0x64, 0x20, 0x69, 0x6E, 0x66, 0x6F, 0x73, 0x00, 0x00, 0x0E, 
+	0xDB, 0x4B, 0x9E, 0x3F, 0x45, 0x27, 0x8F, 0x39, 0x7E, 0xFF, 0x9B, 0x4F, 0xB9, 0x93, 0x00, 0x00, 
+	0x04, 0x49, 0x17, 0xDC, 0x76, 0xB4, 0x96, 0x40, 0xD6, 0xF8, 0x39, 0x39, 0x96, 0x0F, 0xAE, 0xD4, 
+	0xEF, 0x39, 0x2F, 0xAA, 0xB2, 0x14, 0x28, 0xAA, 0x21, 0xFB, 0x54, 0xE5, 0x45, 0x05, 0x47, 0x66, 
+	0x7F, 0x75, 0x2D, 0x28, 0x73, 0xA2, 0x00, 0x17, 0xFE, 0xF8, 0x5C, 0x05, 0x75, 0x90, 0x4B, 0x6D, 
+	0x6C, 0x6F, 0x63, 0x6B, 0x65, 0x64, 0x20, 0x73, 0x65, 0x63, 0x72, 0x65, 0x74, 0x00, 0x00, 0x10, 
+	0xFD, 0xC8, 0xA0, 0x76, 0x94, 0xB8, 0x9E, 0x4C, 0x47, 0xD3, 0x7D, 0xE8, 0xCE, 0x5C, 0x74, 0xC1, 
+	0x04, 0x49, 0x17, 0xDC, 0x76, 0xB4, 0x96, 0x40, 0xD6, 0xF8, 0x39, 0x39, 0x96, 0x0F, 0xAE, 0xD4, 
+	0xEF, 0x39, 0x2F, 0xAA, 0xB2, 0x14, 0x28, 0xAA, 0x21, 0xFB, 0x54, 0xE5, 0x45, 0x05, 0x47, 0x66
+};
+
+static void ami_tool_reset_retail_key(AmiToolApp* app) {}
 
 /* Forward declarations of callbacks */
 static bool ami_tool_custom_event_callback(void* context, uint32_t event);
@@ -285,45 +293,11 @@ int32_t ami_tool_app(void* p) {
 AmiToolRetailKeyStatus ami_tool_load_retail_key(AmiToolApp* app) {
     furi_assert(app);
 
-    if(!app->storage) {
-        ami_tool_reset_retail_key(app);
-        return AmiToolRetailKeyStatusStorageError;
-    }
-
-    File* file = storage_file_alloc(app->storage);
-    if(!file) {
-        ami_tool_reset_retail_key(app);
-        return AmiToolRetailKeyStatusStorageError;
-    }
-
-    AmiToolRetailKeyStatus status = AmiToolRetailKeyStatusStorageError;
-    const char* path = APP_DATA_PATH(AMI_TOOL_RETAIL_KEY_FILENAME);
-
-    if(storage_file_open(file, path, FSAM_READ, FSOM_OPEN_EXISTING)) {
-        size_t read = storage_file_read(file, app->retail_key, sizeof(app->retail_key));
-        if(read == AMI_TOOL_RETAIL_KEY_SIZE) {
-            uint8_t extra = 0;
-            size_t extra_read = storage_file_read(file, &extra, 1);
-            if(extra_read == 0) {
-                app->retail_key_size = read;
-                app->retail_key_loaded = true;
-                status = AmiToolRetailKeyStatusOk;
-            } else {
-                ami_tool_reset_retail_key(app);
-                status = AmiToolRetailKeyStatusInvalidSize;
-            }
-        } else {
-            ami_tool_reset_retail_key(app);
-            status = AmiToolRetailKeyStatusInvalidSize;
-        }
-        storage_file_close(file);
-    } else {
-        ami_tool_reset_retail_key(app);
-        status = AmiToolRetailKeyStatusNotFound;
-    }
-
-    storage_file_free(file);
-    return status;
+	app->retail_key = nfc_secrets;
+	app->retail_key_size = 160;
+	app->retail_key_loaded = true;
+				
+    return AmiToolRetailKeyStatusOk;
 }
 
 bool ami_tool_has_retail_key(const AmiToolApp* app) {

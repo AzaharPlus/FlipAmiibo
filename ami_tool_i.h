@@ -193,7 +193,7 @@ struct AmiToolApp {
     SceneManager* scene_manager;
 
     Storage* storage;
-    uint8_t retail_key[AMI_TOOL_RETAIL_KEY_SIZE];
+    uint8_t* retail_key;
     size_t retail_key_size;
     bool retail_key_loaded;
 
