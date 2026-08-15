@@ -80,13 +80,6 @@ void ami_tool_scene_main_menu_on_enter(void* context) {
 
     submenu_add_item(
         app->submenu,
-        "Read",
-        AmiToolMainMenuIndexRead,
-        ami_tool_scene_main_menu_submenu_callback,
-        app);
-
-    submenu_add_item(
-        app->submenu,
         "Generate",
         AmiToolMainMenuIndexGenerate,
         ami_tool_scene_main_menu_submenu_callback,
@@ -94,15 +87,22 @@ void ami_tool_scene_main_menu_on_enter(void* context) {
 
     submenu_add_item(
         app->submenu,
-        "Blank Tag Emulation",
-        AmiToolMainMenuIndexAmiiboLink,
+        "Saved",
+        AmiToolMainMenuIndexSaved,
         ami_tool_scene_main_menu_submenu_callback,
         app);
 
     submenu_add_item(
         app->submenu,
-        "Saved",
-        AmiToolMainMenuIndexSaved,
+        "Read",
+        AmiToolMainMenuIndexRead,
+        ami_tool_scene_main_menu_submenu_callback,
+        app);
+		
+    submenu_add_item(
+        app->submenu,
+        "Blank Tag Emulation",
+        AmiToolMainMenuIndexAmiiboLink,
         ami_tool_scene_main_menu_submenu_callback,
         app);
 

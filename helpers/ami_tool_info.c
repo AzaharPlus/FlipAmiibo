@@ -1415,8 +1415,8 @@ void ami_tool_info_show_actions_menu(AmiToolApp* app) {
         app);
     submenu_add_item(
         app->submenu,
-        "Usage Info",
-        AmiToolInfoActionMenuIndexUsageInfo,
+        "Save to Storage",
+        AmiToolInfoActionMenuIndexSaveToStorage,
         ami_tool_info_actions_submenu_callback,
         app);
     submenu_add_item(
@@ -1433,8 +1433,8 @@ void ami_tool_info_show_actions_menu(AmiToolApp* app) {
         app);
     submenu_add_item(
         app->submenu,
-        "Save to Storage",
-        AmiToolInfoActionMenuIndexSaveToStorage,
+        "Usage Info",
+        AmiToolInfoActionMenuIndexUsageInfo,
         ami_tool_info_actions_submenu_callback,
         app);
 

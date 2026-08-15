@@ -15,7 +15,9 @@ static uint8_t nfc_secrets[AMI_TOOL_RETAIL_KEY_SIZE] = {
 	0xEF, 0x39, 0x2F, 0xAA, 0xB2, 0x14, 0x28, 0xAA, 0x21, 0xFB, 0x54, 0xE5, 0x45, 0x05, 0x47, 0x66
 };
 
-static void ami_tool_reset_retail_key(AmiToolApp* app) {}
+static void ami_tool_reset_retail_key(AmiToolApp* app) {
+	UNUSED(app);
+}
 
 /* Forward declarations of callbacks */
 static bool ami_tool_custom_event_callback(void* context, uint32_t event);
