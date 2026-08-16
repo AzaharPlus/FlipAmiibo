@@ -1384,6 +1384,26 @@ bool ami_tool_info_save_to_storage(AmiToolApp* app) {
     return success;
 }
 
+static bool ami_tool_info_fix_password(AmiToolApp* app) {
+    MfUltralightAuthPassword password = {0};
+    
+	if(app->last_uid_valid &&
+              ami_tool_compute_password_from_uid(
+                  app->last_uid, app->last_uid_len, &password)) {
+        // password derived successfully
+    } else {
+        return false;
+    }
+
+    if(!ami_tool_info_write_password_pages(app, &password)) {
+        return false;
+    }
+	
+	app->tag_password = password;
+	
+	return true;
+}
+
 static void ami_tool_info_actions_submenu_callback(void* context, uint32_t index) {
     AmiToolApp* app = context;
     AmiToolCustomEvent event = AmiToolEventInfoActionEmulate;
@@ -1401,6 +1421,7 @@ static void ami_tool_info_actions_submenu_callback(void* context, uint32_t index
         event = AmiToolEventInfoActionWriteTag;
         break;
     case AmiToolInfoActionMenuIndexSaveToStorage:
+		ami_tool_info_fix_password(app);
         event = AmiToolEventInfoActionSaveToStorage;
         break;
     case AmiToolInfoActionMenuIndexAmiiboInfo:
@@ -1505,14 +1526,10 @@ static bool ami_tool_info_write_password_pages(
     size_t pack_page = app->tag_data->pages_total - 1;
     memcpy(app->tag_data->page[password_page].data, password->data, sizeof(password->data));
     uint8_t* pack = app->tag_data->page[pack_page].data;
-    if(app->tag_pack_valid) {
-        memcpy(pack, app->tag_pack, sizeof(app->tag_pack));
-    } else {
-        pack[0] = 0x80;
-        pack[1] = 0x80;
-        pack[2] = 0x00;
-        pack[3] = 0x00;
-    }
+	pack[0] = 0x80;
+	pack[1] = 0x80;
+	pack[2] = 0x00;
+	pack[3] = 0x00;
     memcpy(app->tag_pack, pack, sizeof(app->tag_pack));
     app->tag_pack_valid = true;
     return true;
@@ -1548,20 +1565,9 @@ bool ami_tool_info_start_emulation(AmiToolApp* app) {
 
     amiibo_configure_rf_interface(app->tag_data);
 
-    MfUltralightAuthPassword password = {0};
-    if(app->tag_password_valid) {
-        password = app->tag_password;
-    } else if(app->last_uid_valid &&
-              ami_tool_compute_password_from_uid(
-                  app->last_uid, app->last_uid_len, &password)) {
-        /* password derived successfully */
-    } else {
-        return false;
-    }
-
-    if(!ami_tool_info_write_password_pages(app, &password)) {
-        return false;
-    }
+    if(!ami_tool_info_fix_password(app)) {
+		return false;
+	}
 
     ami_tool_info_stop_emulation(app);
     app->emulation_listener = nfc_listener_alloc(
@@ -1579,7 +1585,6 @@ bool ami_tool_info_start_emulation(AmiToolApp* app) {
 	widget_add_text_scroll_element(app->info_widget, 2, 0, 124, 60, furi_string_get_cstr(app->text_box_store));
     view_dispatcher_switch_to_view(app->view_dispatcher, AmiToolViewInfo);
 
-    app->tag_password = password;
     app->tag_password_valid = true;
     app->info_emulation_active = true;
     app->info_actions_visible = false;

@@ -170,6 +170,7 @@ static bool ami_tool_scene_generate_prepare_dump(AmiToolApp* app, const char* id
     app->tag_pack_valid = true;
 
     app->tag_data_valid = true;
+	
     return true;
 }
 
