@@ -6,24 +6,15 @@ The original data is re-assembled to be flat, so that Flipper Zero does not need
 to look up multiple files to get all the information about a single Amiibo.
 """
 
-import requests
+import json
 
-
-AMIIBO_JSON_URL = "https://raw.githubusercontent.com/8bitDream/AmiiboAPI/refs/heads/master/database/amiibo.json"
-GAMES_INFO_JSON_URL = "https://raw.githubusercontent.com/8bitDream/AmiiboAPI/refs/heads/master/database/games_info.json"
+AMIIBO_JSON_URL = "./amiibo.json"
+GAMES_INFO_JSON_URL = "./games_info.json"
 
 
 def fetch_json(url: str) -> dict:
-    """
-    Fetch JSON data from a given URL, and output it as a dictionary.
-    :param url: The URL to fetch JSON data from.
-    :type url: str
-    :return: The JSON data as a dictionary.
-    :rtype: dict
-    """
-    response = requests.get(url)
-    response.raise_for_status()
-    return response.json()
+    with open(url, 'r') as file:
+        return json.load(file)
 
 
 def process_amiibo_data(amiibo_data: dict) -> dict[str, str]:
