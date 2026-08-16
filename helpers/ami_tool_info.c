@@ -1524,6 +1524,22 @@ static NfcCommand amiibo_emulation_cb(NfcGenericEvent event, void* context) {
     return NfcCommandContinue; // keep the listener alive
 }
 
+static void ami_tool_randomize_button_callback(GuiButtonType result, InputType type, void* context) {
+    if(type != InputTypeShort) {
+        return;
+    }
+    AmiToolApp* app = context;
+    if(!app) {
+        return;
+    }
+	
+	UNUSED(result);
+	
+	ami_tool_info_stop_emulation(app);
+	ami_tool_info_change_uid(app);
+	ami_tool_info_start_emulation(app);
+}
+
 bool ami_tool_info_start_emulation(AmiToolApp* app) {
     furi_assert(app);
     if(!app->tag_data || !app->tag_data_valid || !app->nfc) {
@@ -1559,8 +1575,9 @@ bool ami_tool_info_start_emulation(AmiToolApp* app) {
         app->text_box_store,
         "Emulating Amiibo...\n\nPlace the back of the Flipper near the reader.\nPress Back to stop.");
     text_box_reset(app->text_box);
-    text_box_set_text(app->text_box, furi_string_get_cstr(app->text_box_store));
-    view_dispatcher_switch_to_view(app->view_dispatcher, AmiToolViewTextBox);
+	widget_reset(app->info_widget);
+	widget_add_text_scroll_element(app->info_widget, 2, 0, 124, 60, furi_string_get_cstr(app->text_box_store));
+    view_dispatcher_switch_to_view(app->view_dispatcher, AmiToolViewInfo);
 
     app->tag_password = password;
     app->tag_password_valid = true;
@@ -1569,6 +1586,8 @@ bool ami_tool_info_start_emulation(AmiToolApp* app) {
     app->info_action_message_visible = false;
     app->usage_info_visible = false;
 
+	widget_add_button_element(
+            app->info_widget, GuiButtonTypeRight, "Randomize UID", ami_tool_randomize_button_callback, app);
     return true;
 }
 
