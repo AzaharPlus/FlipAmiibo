@@ -488,7 +488,6 @@ bool ami_tool_scene_amiibo_link_on_event(void* context, SceneManagerEvent event)
         if(app->info_actions_visible) {
             app->info_actions_visible = false;
             ami_tool_info_refresh_current_page(app);
-            return true;
         }
         app->amiibo_link_active = false;
         app->amiibo_link_waiting_for_completion = false;

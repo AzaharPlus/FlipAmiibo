@@ -293,7 +293,6 @@ bool ami_tool_scene_read_on_event(void* context, SceneManagerEvent event) {
         if(app->info_actions_visible) {
             app->info_actions_visible = false;
             ami_tool_info_refresh_current_page(app);
-            return true;
         }
         app->read_scene_active = false;
         furi_hal_nfc_abort();

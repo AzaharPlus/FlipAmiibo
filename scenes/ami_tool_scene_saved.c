@@ -432,7 +432,7 @@ bool ami_tool_scene_saved_on_event(void* context, SceneManagerEvent event) {
         }
         if(app->info_actions_visible) {
             app->info_actions_visible = false;
-            ami_tool_info_refresh_current_page(app);
+            ami_tool_scene_saved_show_menu(app);
             return true;
         }
         if(app->saved_info_visible) {

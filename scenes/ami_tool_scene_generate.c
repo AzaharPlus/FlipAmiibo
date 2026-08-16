@@ -1165,7 +1165,7 @@ bool ami_tool_scene_generate_on_event(void* context, SceneManagerEvent event) {
         }
         if(app->info_actions_visible) {
             app->info_actions_visible = false;
-            ami_tool_info_refresh_current_page(app);
+            ami_tool_scene_generate_show_root_menu(app);
             return true;
         }
         switch(app->generate_state) {

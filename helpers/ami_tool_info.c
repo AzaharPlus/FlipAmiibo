@@ -21,6 +21,7 @@ typedef enum {
     AmiToolInfoActionMenuIndexChangeUid,
     AmiToolInfoActionMenuIndexWriteTag,
     AmiToolInfoActionMenuIndexSaveToStorage,
+    AmiToolInfoActionMenuIndexAmiiboInfo,
 } AmiToolInfoActionMenuIndex;
 
 static void ami_tool_info_widget_callback(GuiButtonType result, InputType type, void* context);
@@ -891,7 +892,12 @@ void ami_tool_info_show_page(AmiToolApp* app, const char* id_hex, bool from_read
     if(found) {
         ami_tool_info_format_entry(
             app, id_hex ? id_hex : "", furi_string_get_cstr(entry), from_read);
-        ami_tool_info_show_widget_text(app, furi_string_get_cstr(app->text_box_store));
+			
+		if(from_read) {
+			ami_tool_info_show_widget_text(app, furi_string_get_cstr(app->text_box_store));
+		} else {
+			ami_tool_info_show_actions_menu(app);
+		}
     } else {
         furi_string_reset(app->text_box_store);
         if(from_read) {
@@ -1397,6 +1403,10 @@ static void ami_tool_info_actions_submenu_callback(void* context, uint32_t index
     case AmiToolInfoActionMenuIndexSaveToStorage:
         event = AmiToolEventInfoActionSaveToStorage;
         break;
+    case AmiToolInfoActionMenuIndexAmiiboInfo:
+		ami_tool_info_refresh_current_page(app);
+        ami_tool_info_show_widget_text(app, furi_string_get_cstr(app->text_box_store));
+		return;
     default:
         return;
     }
@@ -1435,6 +1445,12 @@ void ami_tool_info_show_actions_menu(AmiToolApp* app) {
         app->submenu,
         "Usage Info",
         AmiToolInfoActionMenuIndexUsageInfo,
+        ami_tool_info_actions_submenu_callback,
+        app);
+    submenu_add_item(
+        app->submenu,
+        "Amiibo Info",
+        AmiToolInfoActionMenuIndexAmiiboInfo,
         ami_tool_info_actions_submenu_callback,
         app);
 
