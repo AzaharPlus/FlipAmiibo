@@ -14,6 +14,7 @@ typedef enum {
 
 typedef bool (*AmiToolGenerateLineCallback)(void* context, size_t index, FuriString* line);
 
+static size_t ami_tool_scene_generate_page_names(AmiToolApp* app);
 static bool ami_tool_scene_generate_iterate_lines(
     AmiToolApp* app,
     const char* path,
@@ -250,6 +251,9 @@ static void ami_tool_scene_generate_show_root_menu(AmiToolApp* app) {
     app->generate_state = AmiToolGenerateStateRootMenu;
     app->generate_return_state = AmiToolGenerateStateRootMenu;
     app->generate_game_count = 0;
+    app->generate_page_offset = 0;
+    app->generate_selected_index = 0;
+	app->saved_index = 0;
     view_dispatcher_switch_to_view(app->view_dispatcher, AmiToolViewMenu);
 }
 
@@ -365,6 +369,24 @@ static bool ami_tool_scene_generate_name_page_callback(
     furi_string_set(id_slot, value);
     furi_string_trim(id_slot);
     return true;
+}
+
+static void ami_tool_scene_generate_show_pre_list_menu(AmiToolApp* app) {
+    submenu_reset(app->submenu);
+    submenu_set_header(app->submenu, "Choose Page");
+	
+	size_t numPages = ami_tool_scene_generate_page_names(app);
+	
+    for(size_t page = 0; page < numPages; page++) {
+		submenu_add_item(
+            app->submenu,
+            app->pages_names[page],
+            page * AMI_TOOL_GENERATE_MAX_AMIIBO_PAGE_ITEMS,
+            ami_tool_scene_generate_submenu_callback,
+            app);
+    }
+    app->generate_state = AmiToolGenerateStateAmiiboPreList;
+    view_dispatcher_switch_to_view(app->view_dispatcher, AmiToolViewMenu);
 }
 
 static bool ami_tool_scene_generate_load_name_page(AmiToolApp* app) {
@@ -582,9 +604,9 @@ static bool ami_tool_scene_generate_load_page_entries(AmiToolApp* app) {
 static void ami_tool_scene_generate_show_name_menu(AmiToolApp* app) {
     furi_string_set_str(app->generate_selected_game, "Amiibo by Name");
     app->generate_list_source = AmiToolGenerateListSourceName;
-    app->generate_page_offset = 0;
-    app->generate_selected_index = 0;
     ami_tool_generate_clear_amiibo_cache(app);
+    app->generate_page_offset = (app->saved_index / AMI_TOOL_GENERATE_MAX_AMIIBO_PAGE_ITEMS) * AMI_TOOL_GENERATE_MAX_AMIIBO_PAGE_ITEMS;
+    app->generate_selected_index = app->saved_index;
 
     if(!ami_tool_scene_generate_show_cached_amiibo_menu(app)) {
         furi_string_set(
@@ -873,6 +895,76 @@ static void ami_tool_scene_generate_commit_text_view(
     view_dispatcher_switch_to_view(app->view_dispatcher, AmiToolViewTextBox);
 }
 
+static size_t ami_tool_scene_generate_page_names(AmiToolApp* app) {
+	static bool hasRun = false;
+	static int res = 0;
+	const char* path = APP_ASSETS_PATH("amiibo_name.dat");
+	
+	if(hasRun) {
+		return res;
+	}
+	
+    if(!app->storage || !path) {
+        return 0;
+    }
+
+    File* file = storage_file_alloc(app->storage);
+    if(!file) {
+        return 0;
+    }
+
+    FuriString* line = furi_string_alloc();
+
+    if(storage_file_open(file, path, FSAM_READ, FSOM_OPEN_EXISTING)) {
+        bool in_data_section = false;
+        size_t line_index = 0;
+        uint8_t buffer[AMI_TOOL_GENERATE_READ_BUFFER];
+
+        while(true) {
+            size_t read = storage_file_read(file, buffer, sizeof(buffer));
+            if(read == 0) break;
+
+            for(size_t i = 0; i < read; i++) {
+                char ch = (char)buffer[i];
+                if(ch == '\r') {
+                    continue;
+                } else if(ch == ':') {
+					ch = 0;
+				}
+                if(ch == '\n') {
+                    if(in_data_section) {
+                        if(!furi_string_empty(line)) {
+							if(line_index % AMI_TOOL_GENERATE_MAX_AMIIBO_PAGE_ITEMS == 0) {
+								int pageIndex = line_index/AMI_TOOL_GENERATE_MAX_AMIIBO_PAGE_ITEMS;
+								
+								if(!app->pages_names[pageIndex]) {
+									app->pages_names[pageIndex] = malloc(strlen(furi_string_get_cstr(line)) + 1);
+								}
+								
+								strcpy(app->pages_names[pageIndex], furi_string_get_cstr(line));
+								res++;
+							}
+                            line_index++;
+                        }
+                    } else if(furi_string_empty(line)) {
+                        in_data_section = true;
+                    }
+                    furi_string_reset(line);
+                } else {
+                    furi_string_push_back(line, ch);
+                }
+            }
+        }
+
+        storage_file_close(file);
+    }
+
+    furi_string_free(line);
+    storage_file_free(file);
+	hasRun = true;
+    return res;
+}
+
 static bool ami_tool_scene_generate_iterate_lines(
     AmiToolApp* app,
     const char* path,
@@ -1022,7 +1114,7 @@ static void ami_tool_scene_generate_submenu_callback(void* context, uint32_t ind
     switch(app->generate_state) {
     case AmiToolGenerateStateRootMenu:
         if(index == AmiToolGenerateRootMenuIndexByName) {
-            ami_tool_scene_generate_show_name_menu(app);
+			ami_tool_scene_generate_show_pre_list_menu(app);
         } else if(index == AmiToolGenerateRootMenuIndexByGames) {
             ami_tool_scene_generate_show_platform_menu(app);
         }
@@ -1044,8 +1136,13 @@ static void ami_tool_scene_generate_submenu_callback(void* context, uint32_t ind
         } else if(index == AMI_TOOL_GENERATE_MENU_INDEX_NEXT_PAGE) {
             ami_tool_scene_generate_change_page(app, 1);
         } else if(index < app->generate_amiibo_count) {
+			app->saved_index = index;
             ami_tool_scene_generate_show_amiibo_placeholder(app, index);
         }
+        break;
+    case AmiToolGenerateStateAmiiboPreList:
+        app->saved_index = index;
+        ami_tool_scene_generate_show_name_menu(app);
         break;
     default:
         break;
@@ -1166,13 +1263,18 @@ bool ami_tool_scene_generate_on_event(void* context, SceneManagerEvent event) {
         }
         if(app->info_actions_visible) {
             app->info_actions_visible = false;
-            ami_tool_scene_generate_show_root_menu(app);
+			if(app->generate_list_source == AmiToolGenerateListSourceName) {
+				ami_tool_scene_generate_show_name_menu(app);
+			} else {
+				ami_tool_scene_generate_show_cached_amiibo_menu(app);
+			}
             return true;
         }
         switch(app->generate_state) {
         case AmiToolGenerateStateRootMenu:
             return false;
         case AmiToolGenerateStatePlatformMenu:
+        case AmiToolGenerateStateAmiiboPreList:
             ami_tool_scene_generate_show_root_menu(app);
             return true;
     case AmiToolGenerateStateGameList:
