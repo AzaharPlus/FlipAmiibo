@@ -33,7 +33,7 @@ def process_amiibo_data(amiibo_data: dict) -> dict[str, str]:
     characters = amiibo_data.get("characters", {})
 
     amiibo_strs: dict[str, str] = {}
-    amiibo_mapping_strs: dict[str, str] = {}
+    amiibo_mapping_strs: dict[str, list[dict[str, str]]] = {}
     amiibo_id_to_name: dict[str, str] = {}
 
     for amiibo_id, amiibo in amiibos.items():
@@ -57,7 +57,12 @@ def process_amiibo_data(amiibo_data: dict) -> dict[str, str]:
         amiibo_strs[amiibo_id_clean] = (
             f"{name}|{character}|{amiibo_series_name}|{game_series_name}|{type_name}|{release_info_line}"
         )
-        amiibo_mapping_strs[name] = amiibo_id_clean
+
+        tmpDict = {}
+        tmpDict[amiibo_series_name] = amiibo_id_clean
+        tmpList = amiibo_mapping_strs.get(name, [])
+        tmpList.append(tmpDict)
+        amiibo_mapping_strs[name] = tmpList
 
     # Already sorted as you had
     amiibo_strs = dict(sorted(amiibo_strs.items()))
@@ -78,8 +83,13 @@ def process_amiibo_data(amiibo_data: dict) -> dict[str, str]:
         amiibo_name_file.write(f"AmiiboCount: {len(amiibos)}\n")
         amiibo_name_file.write("\n")
 
-        for amiibo_name, amiibo_id in amiibo_mapping_strs.items():
-            amiibo_name_file.write(f"{amiibo_name}: {amiibo_id}\n")
+        for amiibo_name, item in amiibo_mapping_strs.items():
+            for it in item:
+                for amiibo_series, amiibo_id in it.items():
+                    if len(item) > 1:
+                        amiibo_name_file.write(f"{amiibo_name} [{amiibo_series}]: {amiibo_id}\n")
+                    else:
+                        amiibo_name_file.write(f"{amiibo_name}: {amiibo_id}\n")
 
     return amiibo_id_to_name
 
