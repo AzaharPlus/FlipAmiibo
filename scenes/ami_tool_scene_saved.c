@@ -37,19 +37,6 @@ static void ami_tool_scene_saved_show_message(AmiToolApp* app, const char* messa
     app->saved_info_visible = false;
 }
 
-static bool ami_tool_scene_saved_is_hex_string(const char* str) {
-    if(!str || *str == '\0') {
-        return false;
-    }
-    while(*str) {
-        if(!isxdigit((unsigned char)*str)) {
-            return false;
-        }
-        str++;
-    }
-    return true;
-}
-
 static bool ami_tool_scene_saved_parse_filename(
     const char* name,
     char* id_hex,
@@ -70,7 +57,12 @@ static bool ami_tool_scene_saved_parse_filename(
          tolower((unsigned char)extension[1]) == 'n' &&
          tolower((unsigned char)extension[2]) == 'f' &&
          tolower((unsigned char)extension[3]) == 'c')) {
-        return false;
+		if(!(tolower((unsigned char)extension[0]) == '.' &&
+			 tolower((unsigned char)extension[1]) == 's' &&
+			 tolower((unsigned char)extension[2]) == 'h' &&
+			 tolower((unsigned char)extension[3]) == 'd')) {
+			return false;
+		}
     }
 
     size_t core_len = name_len - 4;
@@ -81,36 +73,8 @@ static bool ami_tool_scene_saved_parse_filename(
     memcpy(buffer, name, core_len);
     buffer[core_len] = '\0';
 
-    char* dash = strrchr(buffer, '-');
-    if(!dash) {
-        return false;
-    }
-
-    *dash = '\0';
-    const char* id_part = buffer;
-    const char* uid_part = dash + 1;
-
-    if(id_part[0] == '\0' || uid_part[0] == '\0') {
-        return false;
-    }
-    if(!ami_tool_scene_saved_is_hex_string(id_part) ||
-       !ami_tool_scene_saved_is_hex_string(uid_part)) {
-        return false;
-    }
-
-    if(strlen(id_part) + 1 > id_size || strlen(uid_part) + 1 > uid_size) {
-        return false;
-    }
-
-    for(size_t i = 0; id_part[i]; i++) {
-        id_hex[i] = (char)toupper((unsigned char)id_part[i]);
-    }
-    id_hex[strlen(id_part)] = '\0';
-
-    for(size_t i = 0; uid_part[i]; i++) {
-        uid_hex[i] = (char)toupper((unsigned char)uid_part[i]);
-    }
-    uid_hex[strlen(uid_part)] = '\0';
+    id_hex[0] = '\0';
+    uid_hex[0] = '\0';
 
     return true;
 }
@@ -170,14 +134,8 @@ static AmiToolSavedLoadStatus ami_tool_scene_saved_load_page(AmiToolApp* app) {
             furi_string_printf(path, "%s/%s", AMI_TOOL_NFC_FOLDER, name_buffer);
             furi_string_set(id_store, id_hex);
 
-            furi_string_reset(lookup_name);
-            if(!ami_tool_info_get_name_for_id(app, id_hex, lookup_name)) {
-                furi_string_set(lookup_name, id_hex);
-            }
-
-            furi_string_set(display, furi_string_get_cstr(lookup_name));
+            furi_string_set(display, name_buffer);
             furi_string_push_back(display, ' ');
-            furi_string_cat(display, uid_hex);
 
             added++;
             valid_index++;
@@ -319,8 +277,19 @@ static bool ami_tool_scene_saved_load_entry(AmiToolApp* app, size_t index) {
         }
 
         amiibo_configure_rf_interface(app->tag_data);
-        const char* id_hex = furi_string_get_cstr(app->saved_page_ids[index]);
-        ami_tool_info_show_page(app, (id_hex && id_hex[0]) ? id_hex : NULL, false);
+		
+        uint8_t id_bin[8];
+		char id_hex[17] = {0};
+		memcpy(id_bin, app->tag_data->page[21].data, 4);
+		memcpy(id_bin + 4, app->tag_data->page[22].data, 4);
+		char* hex = "0123456789ABCDEF";
+		
+		for(int i=0; i<8; i++) {
+			id_hex[2*i] = hex[id_bin[i] >> 4];
+			id_hex[2*i +1] = hex[id_bin[i] & 0x0f];
+		}
+		
+        ami_tool_info_show_page(app, id_hex, false);
         app->saved_info_visible = true;
         success = true;
     } while(false);
