@@ -185,6 +185,8 @@ static void ami_tool_scene_saved_show_menu(AmiToolApp* app) {
             ami_tool_scene_saved_submenu_callback,
             app);
     }
+	
+	submenu_set_selected_item(app->submenu, app->saved_index);
 
     view_dispatcher_switch_to_view(app->view_dispatcher, AmiToolViewMenu);
     app->saved_info_visible = false;
@@ -307,11 +309,14 @@ static void ami_tool_scene_saved_submenu_callback(void* context, uint32_t index)
         } else {
             app->saved_page_offset = 0;
         }
+		app->saved_index = AMI_TOOL_SAVED_MAX_PAGE_ITEMS - 1;
         ami_tool_scene_saved_refresh(app);
     } else if(index == AMI_TOOL_SAVED_MENU_INDEX_NEXT_PAGE) {
+		app->saved_index = 0;
         app->saved_page_offset += app->saved_page_entry_count;
         ami_tool_scene_saved_refresh(app);
     } else {
+		app->saved_index = index;
         if(!ami_tool_scene_saved_load_entry(app, index)) {
             ami_tool_scene_saved_show_message(
                 app, "Unable to load Amiibo file.\nCheck the NFC file and try again.");
@@ -321,7 +326,6 @@ static void ami_tool_scene_saved_submenu_callback(void* context, uint32_t index)
 
 void ami_tool_scene_saved_on_enter(void* context) {
     AmiToolApp* app = context;
-    app->saved_page_offset = 0;
     app->saved_info_visible = false;
     ami_tool_scene_saved_refresh(app);
 }
