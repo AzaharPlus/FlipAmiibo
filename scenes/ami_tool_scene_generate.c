@@ -417,6 +417,7 @@ static bool ami_tool_scene_generate_load_name_page(AmiToolApp* app) {
 typedef struct {
     AmiToolApp* app;
     size_t remaining;
+	size_t current;
 } AmiToolGenerateNameFillContext;
 
 static bool ami_tool_scene_generate_fill_names_callback(
@@ -431,31 +432,34 @@ static bool ami_tool_scene_generate_fill_names_callback(
         return true;
     }
 
-    size_t id_len = (size_t)(colon - raw);
+    size_t name_len = (size_t)(colon - raw);
+    const char* id = colon + 2;
+    size_t id_len = strlen(id);
     AmiToolApp* app = ctx->app;
 
-    for(size_t i = 0; i < app->generate_page_entry_count; i++) {
-        if(!app->generate_page_ids[i]) continue;
-        const char* target = furi_string_get_cstr(app->generate_page_ids[i]);
-        if(!target || target[0] == '\0') continue;
-        if(strlen(target) != id_len) continue;
-        if(strncmp(raw, target, id_len) != 0) continue;
-
-        const char* value = colon + 1;
-        while(*value == ' ' || *value == '\t') {
-            value++;
-        }
-        const char* pipe = strchr(value, '|');
-        size_t name_len = pipe ? (size_t)(pipe - value) : strlen(value);
-        if(app->generate_page_names[i]) {
-            furi_string_set_strn(app->generate_page_names[i], value, name_len);
-        }
-        ctx->remaining--;
-        if(ctx->remaining == 0) {
-            return false;
-        }
-        break;
-    }
+	if(!app->generate_page_ids[ctx->current]) {
+		return true;
+	}
+	const char* target = furi_string_get_cstr(app->generate_page_ids[ctx->current]);
+	if(!target || target[0] == '\0') {
+		return true;
+	}
+	if(strlen(target) != id_len) {
+		return true;
+	}
+	if(strcmp(id, target) != 0) {
+		return true;
+	}
+		
+	if(app->generate_page_names[ctx->current]) {
+		furi_string_set_strn(app->generate_page_names[ctx->current], raw, name_len);
+	}
+	ctx->remaining--;
+	ctx->current++;
+	
+	if(ctx->remaining == 0) {
+		return false;
+	}
 
     return true;
 }
@@ -468,11 +472,12 @@ static bool ami_tool_scene_generate_fill_page_names(AmiToolApp* app) {
     AmiToolGenerateNameFillContext context = {
         .app = app,
         .remaining = app->generate_page_entry_count,
+        .current = 0,
     };
 
     bool ok = ami_tool_scene_generate_iterate_lines(
         app,
-        APP_ASSETS_PATH("amiibo.dat"),
+        APP_ASSETS_PATH("amiibo_name.dat"),
         true,
         ami_tool_scene_generate_fill_names_callback,
         &context);

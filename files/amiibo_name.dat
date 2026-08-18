@@ -14,9 +14,9 @@ Agnes: 0489000100ef0502
 Akuma [Street Fighter 6]: 34d5000104c01d02
 Akuma [Street Fighter 6]: 34d5000104e01d02
 Al: 03710001005c0502
-Alex [Super Smash Bros.]: 3dc1000004230002
 Alex [Street Fighter 6]: 34db000104e61d02
 Alex [Street Fighter 6]: 34db000104ef1d02
+Alex [Super Smash Bros.]: 3dc1000004230002
 Alfonso: 02c3000100dc0502
 Alice: 03bd000100f90502
 Alli: 02c4000100670502
@@ -150,9 +150,9 @@ Carmen: 04a4000100d40502
 Caroline: 04e3000101650502
 Carrie: 03d3000102f30502
 Cashmere: 04c90001030d0502
-Celeste [Animal Crossing]: 0193000103ae0502
 Celeste [Animal Crossing]: 0193000002480502
 Celeste [Animal Crossing]: 0193000101740502
+Celeste [Animal Crossing]: 0193000103ae0502
 Celia: 0454000101ae0502
 Celica: 2107000003611202
 Cephalobot: 0a17000103ce0502
@@ -204,11 +204,10 @@ Cyd: 0a0d000103c40502
 Cyrano: 0200000100a10502
 Cyrus [Animal Crossing]: 018b000002460502
 Cyrus [Animal Crossing]: 018b000101150502
-DJ KK: 0182010100460502
 Daijobu: 3805000103981702
-Daisy [Animal Crossing]: 02f1000101450502
-Daisy [Super Smash Bros.]: 00130000037a0002
 Daisy [Super Mario Bros.]: 0013000002660102
+Daisy [Super Smash Bros.]: 00130000037a0002
+Daisy [Animal Crossing]: 02f1000101450502
 Daisy - Baseball: 09c3020102790e02
 Daisy - Golf: 09c30401027b0e02
 Daisy - Horse Racing: 09c30501027c0e02
@@ -229,8 +228,8 @@ Derwin: 030f0001016d0502
 Detective Pikachu: 1d01000003750d02
 Dhalsim [Street Fighter 6]: 34c9000104b41d02
 Dhalsim [Street Fighter 6]: 34c9000104d41d02
-Diana [Pragmata]: 3580000005062102
 Diana [Animal Crossing]: 02de0001009c0502
+Diana [Pragmata]: 3580000005062102
 Diddy Kong [Super Smash Bros.]: 00090000000d0002
 Diddy Kong [Super Mario Bros.]: 0009000002650102
 Diddy Kong - Baseball: 09c8020102920e02
@@ -244,6 +243,7 @@ Digby [Animal Crossing]: 018c0001004c0502
 Digby - Raincoat: 018c010101180502
 Diva: 034a000101430502
 Dizzy: 0324000101890502
+DJ KK: 0182010100460502
 Dobie: 050f000103140502
 Doc: 049e000101b70502
 Dom: 0a0b000103c20502
@@ -339,8 +339,8 @@ Gruff: 035a000100850502
 Guardian: 0140000003550902
 Guile [Street Fighter 6]: 34c6000104b11d02
 Guile [Street Fighter 6]: 34c6000104d11d02
-Gulliver [Animal Crossing]: 01a2000103b90502
 Gulliver [Animal Crossing]: 01a20001017d0502
+Gulliver [Animal Crossing]: 01a2000103b90502
 Gwen: 0464000100c00502
 Hamlet: 037e000101560502
 Hammer Slam Bowser: 0005ff00023a0702
@@ -362,8 +362,8 @@ Hugh: 047b000100f50502
 Ice Climbers: 078f000003810002
 Iggly: 046a000101d00502
 Ikari: 3801000103941702
-Ike [Super Smash Bros.]: 2101000000180002
 Ike [Animal Crossing]: 021f000103170502
+Ike [Super Smash Bros.]: 2101000000180002
 Incineroar: 1bd7000003860002
 Ingrid [Street Fighter 6]: 34dc000104e71d02
 Ingrid [Street Fighter 6]: 34dc000104f01d02
@@ -379,9 +379,9 @@ Inkling Squid: 0800030000400402
 Inkling Squid - Neon Purple: 08000300036b0402
 Inkling Squid - Orange: 0800030002610402
 Ione: 0a12000103c90502
+Isabelle [Super Smash Bros.]: 01810000037d0002
 Isabelle [Animal Crossing]: 0181000100440502
 Isabelle [Animal Crossing]: 0181040103aa0502
-Isabelle [Super Smash Bros.]: 01810000037d0002
 Isabelle - Character Parfait: 0181000101d40502
 Isabelle - Dress: 0181030101700502
 Isabelle - Kimono: 01810201011a0502
@@ -390,8 +390,6 @@ Isabelle - Sweater: 0181050103bf0502
 Isabelle - Winter: 0181010100b40502
 Isabelle - Winter Outfit: 01810100023f0502
 Ivysaur: 1902000003830002
-JP [Street Fighter 6]: 34ce000104b91d02
-JP [Street Fighter 6]: 34ce000104d91d02
 Jack: 01ad000100b80502
 Jacob: 0238000102f80502
 Jacques: 023d000101b50502
@@ -407,6 +405,8 @@ Jitters: 02310001006a0502
 Joan: 01a30001004a0502
 Joey: 03080001014d0502
 Joker: 3a00000003a10002
+JP [Street Fighter 6]: 34ce000104b91d02
+JP [Street Fighter 6]: 34ce000104d91d02
 Judy: 0a0e000103c50502
 Julia: 043b000103030502
 Julian: 03b1000100f00502
@@ -494,8 +494,8 @@ Lucha: 023c000100bd0502
 Lucina: 2102000000290002
 Lucky: 02ec000101c40502
 Lucy: 047c000101a00502
-Luigi [Super Mario Bros.]: 0001000000350102
 Luigi [Super Smash Bros.]: 00010000000c0002
+Luigi [Super Mario Bros.]: 0001000000350102
 Luigi - Baseball: 09c10201026f0e02
 Luigi - Golf: 09c1040102710e02
 Luigi - Horse Racing: 09c1050102720e02
@@ -511,8 +511,8 @@ Lyle: 01aa000100530502
 Lyman: 03c50001015c0502
 M. Bison [Street Fighter 6]: 34d6000104e11d02
 M. Bison [Street Fighter 6]: 34d6000104eb1d02
-Mabel [Animal Crossing]: 0188000101120502
 Mabel [Animal Crossing]: 0188000002410502
+Mabel [Animal Crossing]: 0188000101120502
 Mabel [Animal Crossing]: 0188000103af0502
 Mac: 02f8000101380502
 Maddie: 02f3000102f90502
@@ -534,8 +534,8 @@ Marie - Alterna: 0802000004370402
 Marina [Animal Crossing]: 042a0001012d0502
 Marina [Splatoon]: 0804000003770402
 Marina - Side Order: 0804000004390402
-Mario [Super Mario Bros.]: 0000000000340102
 Mario [Super Smash Bros.]: 0000000000000002
+Mario [Super Mario Bros.]: 0000000000340102
 Mario - Baseball: 09c00201026a0e02
 Mario - Cat: 0000030003a60102
 Mario - Gold Edition: 00000000003c0102
@@ -555,8 +555,8 @@ Marshal: 04ee0001014b0502
 Marth: 21000000000b0002
 Marty: 028f0101031a0502
 Mathilda: 03d2000100e50502
-Mega Man [Mega Man]: 3480000003791502
 Mega Man [Super Smash Bros.]: 3480000000310002
+Mega Man [Mega Man]: 3480000003791502
 Mega Man - Gold Edition: 3480000002580002
 Mega Yarn Yoshi: 00030102023e0302
 Megan: 0a0a000103c10502
@@ -608,12 +608,12 @@ Nibbles: 04e1000101be0502
 Niko: 0a07000103bc0502
 Noah: 22430000043d1b02
 Norma: 02b70001030f0502
-OHare: 04a3000101c90502
 Octavian: 0429000100700502
 Octoling - Blue: 08050200041b0402
 Octoling Boy: 08050200038f0402
 Octoling Girl: 08050100038e0402
 Octoling Octopus: 0805030003900402
+OHare: 04a3000101c90502
 Olaf: 02090001019f0502
 Olimar: 06400100001e0002
 Olive: 0286000103130502
@@ -624,8 +624,8 @@ Opal: 0323000100760502
 Orville: 0a00000103ab0502
 Ozzie: 03c1000100bb0502
 Pac-Man: 3340000000320002
-Palamute [Monster Hunter Rise]: 350a0100042c1802
 Palamute [Monster Hunter Rise]: 350a000004111802
+Palamute [Monster Hunter Rise]: 350a0100042c1802
 Palico [Monster Hunter Rise]: 3509000004101802
 Palico [Monster Hunter Rise]: 35090100042b1802
 Palutena: 07420000001f0002
@@ -640,8 +640,8 @@ Patty: 02b1000100690502
 Paula: 021e000101230502
 Pave: 01ab0001017c0502
 Pawapuro: 3800000103931702
-Peach [Super Mario Bros.]: 0002000000360102
 Peach [Super Smash Bros.]: 0002000000010002
+Peach [Super Mario Bros.]: 0002000000360102
 Peach - Baseball: 09c2020102740e02
 Peach - Cat: 0002010003a70102
 Peach - Golf: 09c2040102760e02
@@ -762,8 +762,8 @@ Roscoe: 03a8000100910502
 Rosie: 025f000101c50502
 Rosie - Amiibo Festival: 025f000101d70502
 Roswell: 0a1f000103d60502
-Rover [Animal Crossing]: 018d0001010c0502
 Rover [Animal Crossing]: 018d0000024c0502
+Rover [Animal Crossing]: 018d0001010c0502
 Rowan: 04fb000101c60502
 Roy: 2104000002520002
 Ruby: 049d000100ed0502
@@ -776,8 +776,8 @@ Sable [Animal Crossing]: 0187000100470502
 Sable [Animal Crossing]: 0187000103b00502
 Sagat [Street Fighter 6]: 34d9000104e41d02
 Sagat [Street Fighter 6]: 34d9000104ed1d02
-Saharah [Animal Crossing]: 01a6000103b70502
 Saharah [Animal Crossing]: 01a6000100500502
+Saharah [Animal Crossing]: 01a6000103b70502
 Sally: 04e4000101b60502
 Samson: 04100001007f0502
 Samus [Super Smash Bros.]: 05c0000000060002
@@ -805,13 +805,13 @@ Shrunk: 01b1000100b20502
 Shrunk - Loud Jacket: 01b10101017b0502
 Shulk: 22400000002b0002
 Sidon: 010a000004a40902
-Simon [Super Smash Bros.]: 37c00000038b0002
 Simon [Animal Crossing]: 03fb000101cf0502
+Simon [Super Smash Bros.]: 37c00000038b0002
 Skye: 0514000101530502
 Sly: 02c9000100cd0502
 Smallfry: 08060100041c0402
-Snake [Super Smash Bros.]: 37800000038a0002
 Snake [Animal Crossing]: 04970001007a0502
+Snake [Super Smash Bros.]: 37800000038a0002
 Snooty: 0206000103120502
 Solaire of Astora: 3380000003781402
 Soleil: 03820001016b0502
@@ -867,8 +867,8 @@ Toad - Power Up Band: 000a000303a0ff02
 Toby: 04a80101031e0502
 Tom: 026c000100c30502
 Tom Nook [Animal Crossing]: 0183000002420502
-Tom Nook [Animal Crossing]: 0183020103a80502
 Tom Nook [Animal Crossing]: 0183000100450502
+Tom Nook [Animal Crossing]: 0183020103a80502
 Tom Nook - Coat: 0183030103be0502
 Tom Nook - Jacket: 01830101010e0502
 Tommy - Suit: 0186030101750502
@@ -941,8 +941,8 @@ Yuka: 03bc0001008a0502
 Yunobo: 010c000004a60902
 Zangief [Street Fighter 6]: 34cf000104ba1d02
 Zangief [Street Fighter 6]: 34cf000104da1d02
-Zelda [Legend Of Zelda]: 0101000003560902
 Zelda [Super Smash Bros.]: 01010000000e0002
+Zelda [Legend Of Zelda]: 0101000003560902
 Zelda - Tears of the Kingdom: 0101000004190902
 Zelda and Loftwing: 0101030004140902
 Zell: 02d8000100e20502

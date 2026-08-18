@@ -33,7 +33,7 @@ def process_amiibo_data(amiibo_data: dict) -> dict[str, str]:
     characters = amiibo_data.get("characters", {})
 
     amiibo_strs: dict[str, str] = {}
-    amiibo_mapping_strs: dict[str, list[dict[str, str]]] = {}
+    amiibo_mapping_strs: dict[str, list[tuple[str, str]]] = {}
     amiibo_id_to_name: dict[str, str] = {}
 
     for amiibo_id, amiibo in amiibos.items():
@@ -58,15 +58,14 @@ def process_amiibo_data(amiibo_data: dict) -> dict[str, str]:
             f"{name}|{character}|{amiibo_series_name}|{game_series_name}|{type_name}|{release_info_line}"
         )
 
-        tmpDict = {}
-        tmpDict[amiibo_series_name] = amiibo_id_clean
+        tmpTup = (amiibo_series_name, amiibo_id_clean)
         tmpList = amiibo_mapping_strs.get(name, [])
-        tmpList.append(tmpDict)
+        tmpList.append(tmpTup)
         amiibo_mapping_strs[name] = tmpList
 
     # Already sorted as you had
     amiibo_strs = dict(sorted(amiibo_strs.items()))
-    amiibo_mapping_strs = dict(sorted(amiibo_mapping_strs.items()))
+    amiibo_mapping_strs = dict(sorted(amiibo_mapping_strs.items(), key=lambda k: k[0].casefold()))
 
     with open("files/amiibo.dat", "w") as amiibo_file:
         amiibo_file.write("Filetype: AmiTool Amiibo DB\n")
@@ -84,12 +83,12 @@ def process_amiibo_data(amiibo_data: dict) -> dict[str, str]:
         amiibo_name_file.write("\n")
 
         for amiibo_name, item in amiibo_mapping_strs.items():
+            item = sorted(item, key=lambda d: (d[1]))
             for it in item:
-                for amiibo_series, amiibo_id in it.items():
                     if len(item) > 1:
-                        amiibo_name_file.write(f"{amiibo_name} [{amiibo_series}]: {amiibo_id}\n")
+                        amiibo_name_file.write(f"{amiibo_name} [{it[0]}]: {it[1]}\n")
                     else:
-                        amiibo_name_file.write(f"{amiibo_name}: {amiibo_id}\n")
+                        amiibo_name_file.write(f"{amiibo_name}: {it[1]}\n")
 
     return amiibo_id_to_name
 
@@ -113,6 +112,7 @@ def _sort_ids_by_amiibo_name(
     """
     Sort amiibo IDs by their amiibo name (stable fallback to ID).
     """
+    amiibo_ids = list(dict.fromkeys(amiibo_ids))
     return sorted(
         amiibo_ids,
         key=lambda aid: (amiibo_id_to_name.get(aid, "").casefold(), aid.casefold()),
