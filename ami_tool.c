@@ -126,7 +126,9 @@ AmiToolApp* ami_tool_alloc(void) {
     for(size_t i = 0; i < 50; i++) {
         app->pages_names[i] = NULL;
     }
+	app->ids_line = furi_string_alloc();
     app->generate_selected_game = furi_string_alloc();
+    app->last_game = furi_string_alloc();
     app->saved_page_offset = 0;
     app->saved_page_entry_count = 0;
     app->saved_has_next_page = false;
@@ -207,6 +209,14 @@ void ami_tool_free(AmiToolApp* app) {
     if(app->generate_selected_game) {
         furi_string_free(app->generate_selected_game);
         app->generate_selected_game = NULL;
+    }
+    if(app->last_game) {
+        furi_string_free(app->last_game);
+        app->last_game = NULL;
+    }
+    if(app->ids_line) {
+        furi_string_free(app->ids_line);
+        app->ids_line = NULL;
     }
     for(size_t i = 0; i < AMI_TOOL_GENERATE_MAX_AMIIBO_PAGE_ITEMS; i++) {
         if(app->generate_page_names[i]) {

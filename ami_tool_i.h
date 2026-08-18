@@ -247,6 +247,7 @@ struct AmiToolApp {
     AmiToolGenerateState generate_state;
     AmiToolGenerateState generate_return_state;
     AmiToolGeneratePlatform generate_platform;
+    AmiToolGeneratePlatform last_platform;
     size_t generate_game_count;
     size_t generate_amiibo_count;
     size_t generate_page_entry_count;
@@ -254,6 +255,7 @@ struct AmiToolApp {
     FuriString* generate_page_names[AMI_TOOL_GENERATE_MAX_AMIIBO_PAGE_ITEMS];
     FuriString* generate_page_ids[AMI_TOOL_GENERATE_MAX_AMIIBO_PAGE_ITEMS];
     FuriString* generate_selected_game;
+    FuriString* last_game;
     size_t saved_page_offset;
     size_t saved_page_entry_count;
     bool saved_has_next_page;
@@ -262,6 +264,7 @@ struct AmiToolApp {
     FuriString* saved_page_display[AMI_TOOL_SAVED_MAX_PAGE_ITEMS];
     FuriString* saved_page_paths[AMI_TOOL_SAVED_MAX_PAGE_ITEMS];
     FuriString* saved_page_ids[AMI_TOOL_SAVED_MAX_PAGE_ITEMS];
+	FuriString* ids_line;
 
     bool amiibo_link_active;
     bool amiibo_link_waiting_for_completion;
