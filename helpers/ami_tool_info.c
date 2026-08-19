@@ -1353,9 +1353,30 @@ bool ami_tool_info_save_to_storage(AmiToolApp* app) {
     if(!path) {
         return false;
     }
+	
+	FuriString* name = furi_string_alloc();
+	ami_tool_info_get_name_for_id(app, id_hex, name);
+	char* cName;
+
+	if(furi_string_size(name) > 0) {
+		cName = malloc(furi_string_size(name) + 1);	
+		strcpy(cName, furi_string_get_cstr(name));
+		
+		char* slash = strchr(cName, '/');
+		if(slash) {
+			slash[0] = '-';		// for Spork/Crackle
+		}
+	} else {
+		cName = malloc(sizeof(id_hex));	
+		strcpy(cName, id_hex);
+	}
+	
+	furi_string_free(name);
 
     furi_string_printf(
-        path, "%s/%s-%s%s", AMI_TOOL_NFC_FOLDER, id_hex, uid_hex, AMI_TOOL_NFC_EXTENSION);
+        path, "%s/%s-%s%s", AMI_TOOL_NFC_FOLDER, cName, uid_hex, AMI_TOOL_NFC_EXTENSION);
+	
+	free(cName);
 
     NfcDevice* device = nfc_device_alloc();
     bool success = false;
