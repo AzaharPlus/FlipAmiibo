@@ -9,6 +9,7 @@
 #include <gui/modules/submenu.h>
 #include <gui/modules/text_box.h>
 #include <gui/modules/widget.h>
+#include <gui/modules/file_browser.h>
 #include <gui/scene_manager.h>
 #include <storage/storage.h>
 #include <nfc/nfc.h>
@@ -90,6 +91,7 @@ typedef enum {
     AmiToolViewMenu,
     AmiToolViewTextBox,
     AmiToolViewInfo,
+    AmiToolViewBrowser,
 } AmiToolView;
 
 /* Scene IDs */
@@ -280,6 +282,9 @@ struct AmiToolApp {
     bool amiibo_link_completion_marker_valid;
     uint8_t amiibo_link_completion_marker[MF_ULTRALIGHT_PAGE_SIZE];
 
+	FileBrowser* browser;
+	FuriString* result_path;
+	
     Bt* bt;
     FuriHalBleProfileBase* bt_serial_profile;
     bool bt_connected;

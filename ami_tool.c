@@ -1,6 +1,7 @@
 #include "ami_tool_i.h"
 #include <stdio.h>
 #include <string.h>
+#include <nfc/nfc_device.h>
 
 static uint8_t nfc_secrets[AMI_TOOL_RETAIL_KEY_SIZE] = {
 	0x1D, 0x16, 0x4B, 0x37, 0x5B, 0x72, 0xA5, 0x57, 0x28, 0xB9, 0x1D, 0x64, 0xB6, 0xA3, 0xC2, 0x05, 
@@ -24,6 +25,116 @@ static bool ami_tool_custom_event_callback(void* context, uint32_t event);
 static bool ami_tool_back_event_callback(void* context);
 static void ami_tool_tick_event_callback(void* context);
 
+static bool isFileSupported(const char* path) {
+	size_t name_len = strlen(path);
+    if(name_len <= 4) {
+        return false;
+    }
+
+    const char* extension = path + name_len - 4;
+    if(!(tolower((unsigned char)extension[0]) == '.' &&
+         tolower((unsigned char)extension[1]) == 'n' &&
+         tolower((unsigned char)extension[2]) == 'f' &&
+         tolower((unsigned char)extension[3]) == 'c')) {
+		if(!(tolower((unsigned char)extension[0]) == '.' &&
+			 tolower((unsigned char)extension[1]) == 's' &&
+			 tolower((unsigned char)extension[2]) == 'h' &&
+			 tolower((unsigned char)extension[3]) == 'd')) {
+			return false;
+		}
+    }
+	
+	return true;
+}
+
+static void file_browser_select_callback(void* context) {
+    if(!context) return;
+	AmiToolApp* app = context;
+//	FURI_LOG_E("select", "%s", furi_string_get_cstr(app->result_path));
+	
+    const char* path = furi_string_get_cstr(app->result_path);
+    if(!path || path[0] == '\0') {
+        return;
+    }
+	
+    if(!isFileSupported(path)) {
+		return;
+	}
+
+    NfcDevice* device = nfc_device_alloc();
+    if(!device) {
+        return;
+    }
+
+    do {
+        if(!nfc_device_load(device, path)) {
+            break;
+        }
+        const MfUltralightData* data =
+            (const MfUltralightData*)nfc_device_get_data(device, NfcProtocolMfUltralight);
+        if(!data || !app->tag_data) {
+            break;
+        }
+        mf_ultralight_copy(app->tag_data, data);
+        app->tag_data_valid = true;
+        if(app->tag_data->pages_total > 0) {
+            size_t pack_page = app->tag_data->pages_total - 1;
+            memcpy(
+                app->tag_pack,
+                app->tag_data->page[pack_page].data,
+                sizeof(app->tag_pack));
+            app->tag_pack_valid = true;
+        }
+
+        size_t uid_len = 0;
+        const uint8_t* uid = mf_ultralight_get_uid(app->tag_data, &uid_len);
+        if(uid && uid_len > 0) {
+            ami_tool_store_uid(app, uid, uid_len);
+            if(ami_tool_compute_password_from_uid(uid, uid_len, &app->tag_password)) {
+                app->tag_password_valid = true;
+            } else {
+                app->tag_password_valid = false;
+                memset(&app->tag_password, 0, sizeof(app->tag_password));
+            }
+        } else {
+            app->tag_password_valid = false;
+            memset(&app->tag_password, 0, sizeof(app->tag_password));
+        }
+
+        amiibo_configure_rf_interface(app->tag_data);
+		
+        uint8_t id_bin[8];
+		char id_hex[17] = {0};
+		memcpy(id_bin, app->tag_data->page[21].data, 4);
+		memcpy(id_bin + 4, app->tag_data->page[22].data, 4);
+		char* hex = "0123456789ABCDEF";
+		
+		for(int i=0; i<8; i++) {
+			id_hex[2*i] = hex[id_bin[i] >> 4];
+			id_hex[2*i +1] = hex[id_bin[i] & 0x0f];
+		}
+		
+        ami_tool_info_show_page(app, id_hex, false);
+        app->saved_info_visible = true;
+    } while(false);
+
+    nfc_device_free(device);
+}
+
+bool file_browser_item_callback(FuriString *path, void *context, uint8_t **icon, FuriString *item_name) {
+	UNUSED(context);
+	UNUSED(icon);
+	UNUSED(item_name);
+	
+//	FURI_LOG_E("item", "path = %s", furi_string_get_cstr(path));
+
+	if(!isFileSupported(furi_string_get_cstr(path))) {
+		return false;
+	}
+	
+	return true;
+}
+
 /* Allocate and initialize app */
 AmiToolApp* ami_tool_alloc(void) {
     AmiToolApp* app = malloc(sizeof(AmiToolApp));
@@ -46,6 +157,29 @@ AmiToolApp* ami_tool_alloc(void) {
     view_dispatcher_attach_to_gui(
         app->view_dispatcher, app->gui, ViewDispatcherTypeFullscreen);
 
+	// file browser
+	FuriString* result_path = furi_string_alloc_set(AMI_TOOL_NFC_FOLDER);
+	app->browser = file_browser_alloc(result_path);
+
+    file_browser_configure(
+        app->browser,
+        "*",
+        AMI_TOOL_NFC_FOLDER,
+        true,
+        true,
+        NULL,
+        false
+    );
+
+	file_browser_start(app->browser, result_path);
+	
+	file_browser_set_callback(app->browser, file_browser_select_callback, app);
+	file_browser_set_item_callback(app->browser, file_browser_item_callback, app);
+	
+    app->result_path = result_path;
+    view_dispatcher_add_view(
+        app->view_dispatcher, AmiToolViewBrowser, file_browser_get_view(app->browser));
+	
     /* Submenu (main menu view) */
     app->submenu = submenu_alloc();
     view_dispatcher_add_view(
@@ -178,6 +312,11 @@ void ami_tool_free(AmiToolApp* app) {
     view_dispatcher_remove_view(app->view_dispatcher, AmiToolViewMenu);
     view_dispatcher_remove_view(app->view_dispatcher, AmiToolViewTextBox);
     view_dispatcher_remove_view(app->view_dispatcher, AmiToolViewInfo);
+    view_dispatcher_remove_view(app->view_dispatcher, AmiToolViewBrowser);
+
+	file_browser_stop(app->browser);
+	file_browser_free(app->browser);
+	furi_string_free(app->result_path);
 
     /* Free modules */
     submenu_free(app->submenu);
