@@ -12,5 +12,5 @@ App(
     fap_weburl="https://github.com/AzaharPlus/FlipAmiibo",
     fap_file_assets="files",
     fap_libs=["mbedtls"],
-    fap_version="0.3.0",
+    fap_version="0.1.0",
 )
