@@ -24,11 +24,6 @@ static bool ami_tool_scene_generate_iterate_lines(
     bool skip_header,
     AmiToolGenerateLineCallback callback,
     void* context);
-static bool ami_tool_scene_generate_iterate_games(
-    AmiToolApp* app,
-    AmiToolGeneratePlatform platform,
-    AmiToolGenerateLineCallback callback,
-    void* context);
 static bool ami_tool_scene_generate_find_mapping_for_game(
     AmiToolApp* app,
     AmiToolGeneratePlatform platform,
@@ -38,7 +33,6 @@ static bool ami_tool_scene_generate_fill_page_names(AmiToolApp* app);
 static bool ami_tool_scene_generate_load_name_page(AmiToolApp* app);
 static bool ami_tool_scene_generate_load_game_page(AmiToolApp* app);
 static bool ami_tool_scene_generate_load_page_entries(AmiToolApp* app);
-static void ami_tool_scene_generate_show_amiibo_menu(AmiToolApp* app, size_t game_index);
 static bool ami_tool_scene_generate_show_cached_amiibo_menu(AmiToolApp* app, bool fromScratch);
 static void ami_tool_scene_generate_change_page(AmiToolApp* app, int direction);
 static void ami_tool_scene_generate_show_name_menu(AmiToolApp* app);
@@ -186,11 +180,6 @@ static void ami_tool_scene_generate_commit_text_view(
     AmiToolApp* app,
     AmiToolGenerateState state,
     AmiToolGenerateState return_state);
-static bool ami_tool_scene_generate_get_game_name(
-    AmiToolApp* app,
-    AmiToolGeneratePlatform platform,
-    size_t target_index,
-    FuriString* out);
 static const char* ami_tool_scene_generate_platform_label(AmiToolGeneratePlatform platform);
 static const char* ami_tool_scene_generate_platform_mapping_path(AmiToolGeneratePlatform platform);
 static void ami_tool_scene_generate_return_to_state(AmiToolApp* app, AmiToolGenerateState state);
@@ -200,39 +189,11 @@ typedef struct {
     size_t count;
 } AmiToolGenerateListBuildContext;
 
-static bool ami_tool_scene_generate_add_game_callback(
-    void* context,
-    size_t index,
-    FuriString* name) {
-    AmiToolGenerateListBuildContext* ctx = context;
-    submenu_add_item(
-        ctx->app->submenu,
-        furi_string_get_cstr(name),
-        index,
-        ami_tool_scene_generate_submenu_callback,
-        ctx->app);
-    ctx->count = index + 1;
-    return true;
-}
-
 typedef struct {
     size_t target_index;
     FuriString* result;
     bool found;
 } AmiToolGenerateFindGameContext;
-
-static bool ami_tool_scene_generate_find_game_callback(
-    void* context,
-    size_t index,
-    FuriString* name) {
-    AmiToolGenerateFindGameContext* find_ctx = context;
-    if(index == find_ctx->target_index) {
-        furi_string_set(find_ctx->result, name);
-        find_ctx->found = true;
-        return false;
-    }
-    return true;
-}
 
 static void ami_tool_scene_generate_show_root_menu(AmiToolApp* app) {
     submenu_reset(app->submenu);
@@ -281,6 +242,7 @@ static void ami_tool_scene_generate_show_root_menu(AmiToolApp* app) {
 static size_t ami_tool_scene_generate_get_categories(AmiToolApp* app, const char* path) {
 	size_t line_index = 0;
 	
+	
 	if(!app->storage || !path) {
         return 0;
     }
@@ -297,6 +259,7 @@ static size_t ami_tool_scene_generate_get_categories(AmiToolApp* app, const char
         uint8_t buffer[AMI_TOOL_GENERATE_READ_BUFFER];
 
         while(true) {
+			
             size_t read = storage_file_read(file, buffer, sizeof(buffer));
             if(read == 0) break;
 
@@ -304,12 +267,9 @@ static size_t ami_tool_scene_generate_get_categories(AmiToolApp* app, const char
                 char ch = (char)buffer[i];
                 if(ch == '\r') {
                     continue;
-                } else if(ch == ':') {
+                } else if(ch == '~') {
 					if(in_data_section) {
-						if(!app->categories[line_index]) {
-							app->categories[line_index] = malloc(strlen(furi_string_get_cstr(line)) + 1);
-						}
-						strcpy(app->categories[line_index], furi_string_get_cstr(line));
+						furi_string_set(app->categories[line_index], furi_string_get_cstr(line));
 						furi_string_reset(line);
 						continue;
 					}
@@ -319,6 +279,7 @@ static size_t ami_tool_scene_generate_get_categories(AmiToolApp* app, const char
                         if(!furi_string_empty(line)) {
 							app->offsets[line_index] = strtoul(furi_string_get_cstr(line)+1, NULL, 10);
                             line_index++;
+							
                         }
                     } else if(furi_string_empty(line)) {
                         in_data_section = true;
@@ -546,7 +507,7 @@ static void ami_tool_scene_generate_show_generic_menu(AmiToolApp* app,
     for(size_t i = 0; i < numCat; i++) {
         submenu_add_item(
             app->submenu,
-            app->categories[i],
+            furi_string_get_cstr(app->categories[i]),
             i,
             ami_tool_scene_generate_submenu_callback,
             app);
@@ -577,6 +538,34 @@ static void ami_tool_scene_generate_show_game_series_menu(AmiToolApp* app) {
 												APP_ASSETS_PATH("game_series_mapping.dat"));
 }
 
+static void ami_tool_scene_generate_show_game_3ds_menu(AmiToolApp* app) {
+	app->generate_list_source = AmiToolGenerateListSourceGame;
+	ami_tool_scene_generate_show_generic_menu(app, "Choose 3DS Game", AmiToolGenerateStateGameList,
+												APP_ASSETS_PATH("game_3ds.dat"), 
+												APP_ASSETS_PATH("game_3ds_mapping.dat"));
+}
+
+static void ami_tool_scene_generate_show_game_wiiu_menu(AmiToolApp* app) {
+	app->generate_list_source = AmiToolGenerateListSourceGame;
+	ami_tool_scene_generate_show_generic_menu(app, "Choose Wii U Game", AmiToolGenerateStateGameList,
+												APP_ASSETS_PATH("game_wiiu.dat"), 
+												APP_ASSETS_PATH("game_wiiu_mapping.dat"));
+}
+
+static void ami_tool_scene_generate_show_game_switch_menu(AmiToolApp* app) {
+	app->generate_list_source = AmiToolGenerateListSourceGame;
+	ami_tool_scene_generate_show_generic_menu(app, "Choose Switch Game", AmiToolGenerateStateGameList,
+												APP_ASSETS_PATH("game_switch.dat"), 
+												APP_ASSETS_PATH("game_switch_mapping.dat"));
+}
+
+static void ami_tool_scene_generate_show_game_switch2_menu(AmiToolApp* app) {
+	app->generate_list_source = AmiToolGenerateListSourceGame;
+	ami_tool_scene_generate_show_generic_menu(app, "Choose Switch 2 Game", AmiToolGenerateStateGameList,
+												APP_ASSETS_PATH("game_switch2.dat"), 
+												APP_ASSETS_PATH("game_switch2_mapping.dat"));
+}
+
 static void ami_tool_scene_generate_show_platform_menu(AmiToolApp* app) {
     submenu_reset(app->submenu);
     submenu_set_header(app->submenu, "Choose Platform");
@@ -593,44 +582,22 @@ static void ami_tool_scene_generate_show_platform_menu(AmiToolApp* app) {
 }
 
 static void ami_tool_scene_generate_show_games_menu(AmiToolApp* app) {
-    submenu_reset(app->submenu);
-    ami_tool_generate_clear_amiibo_cache(app);
-    ami_tool_scene_generate_clear_selected_game(app);
-    furi_string_printf(
-        app->text_box_store, "%s Games", ami_tool_scene_generate_platform_label(app->generate_platform));
-    submenu_set_header(app->submenu, furi_string_get_cstr(app->text_box_store));
-
-    AmiToolGenerateListBuildContext ctx = {
-        .app = app,
-        .count = 0,
-    };
-
-    bool file_ok = ami_tool_scene_generate_iterate_games(
-        app, app->generate_platform, ami_tool_scene_generate_add_game_callback, &ctx);
-
-    if(!file_ok) {
-        furi_string_printf(
-            app->text_box_store,
-            "Unable to read the %s game list.\n\nEnsure the assets folder is installed.",
-            ami_tool_scene_generate_platform_label(app->generate_platform));
-        ami_tool_scene_generate_commit_text_view(
-            app, AmiToolGenerateStateMessage, AmiToolGenerateStatePlatformMenu);
-        return;
-    }
-
-    app->generate_game_count = ctx.count;
-    if(app->generate_game_count == 0) {
-        furi_string_printf(
-            app->text_box_store,
-            "No games found for %s.\n\nUpdate or regenerate your assets.",
-            ami_tool_scene_generate_platform_label(app->generate_platform));
-        ami_tool_scene_generate_commit_text_view(
-            app, AmiToolGenerateStateMessage, AmiToolGenerateStatePlatformMenu);
-        return;
-    }
-
-    app->generate_state = AmiToolGenerateStateGameList;
-    view_dispatcher_switch_to_view(app->view_dispatcher, AmiToolViewMenu);
+	switch(app->generate_platform) {
+		case AmiToolGeneratePlatform3DS:
+			ami_tool_scene_generate_show_game_3ds_menu(app);
+			break;
+		case AmiToolGeneratePlatformWiiU:
+			ami_tool_scene_generate_show_game_wiiu_menu(app);
+			break;
+		case AmiToolGeneratePlatformSwitch:
+			ami_tool_scene_generate_show_game_switch_menu(app);
+			break;
+		case AmiToolGeneratePlatformSwitch2:
+			ami_tool_scene_generate_show_game_switch2_menu(app);
+			break;
+		default:
+			break;
+	}
 }
 
 typedef struct {
@@ -1068,40 +1035,6 @@ static void ami_tool_scene_generate_change_page(AmiToolApp* app, int direction) 
     }
 }
 
-static void ami_tool_scene_generate_show_amiibo_menu(AmiToolApp* app, size_t game_index) {
-    FuriString* game_name = furi_string_alloc();
-    bool found = ami_tool_scene_generate_get_game_name(
-        app, app->generate_platform, game_index, game_name);
-
-    if(!found) {
-        furi_string_printf(
-            app->text_box_store,
-            "Unable to find the selected game.\n\nReturn to the list and try again.");
-        ami_tool_scene_generate_commit_text_view(
-            app, AmiToolGenerateStateMessage, AmiToolGenerateStateGameList);
-        furi_string_free(game_name);
-        return;
-    }
-
-    furi_string_set(app->generate_selected_game, game_name);
-    app->generate_list_source = AmiToolGenerateListSourceGame;
-    app->generate_page_offset = 0;
-    app->generate_selected_index = 0;
-    ami_tool_generate_clear_amiibo_cache(app);
-
-    if(!ami_tool_scene_generate_show_cached_amiibo_menu(app, true)) {
-        furi_string_set(
-            app->text_box_store,
-            "Unable to load Amiibo list for the selected game.\n\nUpdate your assets.");
-        ami_tool_scene_generate_commit_text_view(
-            app, AmiToolGenerateStateMessage, AmiToolGenerateStateGameList);
-        furi_string_free(game_name);
-        return;
-    }
-
-    furi_string_free(game_name);
-}
-
 typedef struct {
     const FuriString* game_name;
     FuriString* result_ids;
@@ -1372,54 +1305,6 @@ static bool ami_tool_scene_generate_iterate_lines(
     return success;
 }
 
-static bool ami_tool_scene_generate_iterate_games(
-    AmiToolApp* app,
-    AmiToolGeneratePlatform platform,
-    AmiToolGenerateLineCallback callback,
-    void* context) {
-    const char* path = NULL;
-    switch(platform) {
-    case AmiToolGeneratePlatform3DS:
-        path = APP_ASSETS_PATH("game_3ds.dat");
-        break;
-    case AmiToolGeneratePlatformWiiU:
-        path = APP_ASSETS_PATH("game_wiiu.dat");
-        break;
-    case AmiToolGeneratePlatformSwitch:
-        path = APP_ASSETS_PATH("game_switch.dat");
-        break;
-    case AmiToolGeneratePlatformSwitch2:
-        path = APP_ASSETS_PATH("game_switch2.dat");
-        break;
-    default:
-        break;
-    }
-
-    if(!path) {
-        return false;
-    }
-
-    return ami_tool_scene_generate_iterate_lines(app, path, true, callback, context);
-}
-
-static bool ami_tool_scene_generate_get_game_name(
-    AmiToolApp* app,
-    AmiToolGeneratePlatform platform,
-    size_t target_index,
-    FuriString* out) {
-    AmiToolGenerateFindGameContext context = {
-        .target_index = target_index,
-        .result = out,
-        .found = false,
-    };
-
-    furi_string_reset(out);
-    bool file_ok = ami_tool_scene_generate_iterate_games(
-        app, platform, ami_tool_scene_generate_find_game_callback, &context);
-
-    return file_ok && context.found;
-}
-
 static const char* ami_tool_scene_generate_platform_label(AmiToolGeneratePlatform platform) {
     switch(platform) {
     case AmiToolGeneratePlatform3DS:
@@ -1473,11 +1358,6 @@ static void ami_tool_scene_generate_submenu_callback(void* context, uint32_t ind
             ami_tool_scene_generate_show_games_menu(app);
         }
         break;
-    case AmiToolGenerateStateGameList:
-        if(index < app->generate_game_count) {
-            ami_tool_scene_generate_show_amiibo_menu(app, index);
-        }
-        break;
     case AmiToolGenerateStateAmiiboList:
         if(index == AMI_TOOL_GENERATE_MENU_INDEX_PREV_PAGE) {
             ami_tool_scene_generate_change_page(app, -1);
@@ -1510,6 +1390,7 @@ static void ami_tool_scene_generate_submenu_callback(void* context, uint32_t ind
     case AmiToolGenerateStateGameSeriesList:
     case AmiToolGenerateStateAmiiboSeriesList:
     case AmiToolGenerateStateTypeList:
+	case AmiToolGenerateStateGameList:
 		furi_string_set(app->last_category, app->categories[index]);
         app->saved_category = index;
 		ami_tool_scene_generate_show_category_list(app, true);
@@ -1635,8 +1516,6 @@ bool ami_tool_scene_generate_on_event(void* context, SceneManagerEvent event) {
             app->info_actions_visible = false;
 			if(app->generate_list_source == AmiToolGenerateListSourceName) {
 				ami_tool_scene_generate_show_name_menu(app);
-			} else if(app->generate_list_source == AmiToolGenerateListSourceGame) {
-				ami_tool_scene_generate_show_cached_amiibo_menu(app, false);
 			} else {
 				ami_tool_scene_generate_show_category_list(app, false);
 			}
@@ -1650,6 +1529,8 @@ bool ami_tool_scene_generate_on_event(void* context, SceneManagerEvent event) {
             ami_tool_scene_generate_show_root_menu(app);
             return true;
 		case AmiToolGenerateStateGameList:
+			app->generate_selected_index = 0;
+			app->saved_index = 0;
 			ami_tool_scene_generate_show_platform_menu(app);
 			return true;
 		case AmiToolGenerateStateTypeList:
@@ -1667,12 +1548,16 @@ bool ami_tool_scene_generate_on_event(void* context, SceneManagerEvent event) {
 				ami_tool_scene_generate_show_amiibo_series_menu(app);
 			} else if(app->generate_list_source == AmiToolGenerateListSourceGameSeries) {
 				ami_tool_scene_generate_show_game_series_menu(app);
+			} else if(app->generate_list_source == AmiToolGenerateListSourceGame) {
+				ami_tool_scene_generate_show_games_menu(app);
 			}
 			return true;
 		case AmiToolGenerateStateAmiiboList:
 			if(app->generate_list_source == AmiToolGenerateListSourceName) {
 				ami_tool_scene_generate_show_root_menu(app);
 			} else {
+				app->generate_selected_index = 0;
+				app->saved_index = 0;
 				ami_tool_scene_generate_show_games_menu(app);
 			}
 			return true;

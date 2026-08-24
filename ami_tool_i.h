@@ -264,7 +264,7 @@ struct AmiToolApp {
     size_t generate_amiibo_count;
     size_t generate_page_entry_count;
     char* pages_names[AMI_TOOL_GENERATE_MAX_AMIIBO_PAGE_NUMBER];
-    char* categories[AMI_TOOL_GENERATE_MAX_AMIIBO_CATEGORIES_NUMBER];
+    FuriString* categories[AMI_TOOL_GENERATE_MAX_AMIIBO_CATEGORIES_NUMBER];
 	const char* mapping_filename;
     size_t offsets[AMI_TOOL_GENERATE_MAX_AMIIBO_CATEGORIES_NUMBER];
     FuriString* generate_page_names[AMI_TOOL_GENERATE_MAX_AMIIBO_PAGE_ITEMS];

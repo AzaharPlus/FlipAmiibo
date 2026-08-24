@@ -27,10 +27,12 @@ def write_amiibo_mapping(mapping, keys_file, mappings_file, sortKeys, amiibo_id_
         amiibo_file.write("\n")
 
         for key_name, id_list in mapping.items():
+            key_name = key_name.replace("–", "-").replace("é", "e")     # for pokkén and '–' in xenoblade on switch2
+            id_list = list(dict.fromkeys(id_list))		# remove duplicates
             id_list = sorted(id_list)
             id_list = sorted(id_list, key=lambda k: amiibo_id_to_name[k].casefold())
             number = str(len(id_list))
-            amiibo_file.write(f"{key_name}: {number:4} ")
+            amiibo_file.write(f"{key_name}~ {number:4} ")
             first = True
             for aid in id_list:
                 if not first:
@@ -52,8 +54,9 @@ def write_amiibo_mapping(mapping, keys_file, mappings_file, sortKeys, amiibo_id_
             amiibo_file.write("\n")
 
             for key_name in keys:
-                toFind = "\n" + key_name + ":"
-                amiibo_file.write(f"{key_name}: {content.find(toFind) + len(toFind)}\n")
+                key_name = key_name.replace("–", "-").replace("é", "e")     # for pokkén and '–' in xenoblade on switch2
+                toFind = "\n" + key_name + "~"
+                amiibo_file.write(f"{key_name}~ {content.find(toFind) + len(toFind)}\n")
 
 def process_amiibo_data(amiibo_data: dict) -> dict[str, str]:
     """
@@ -297,10 +300,10 @@ def process_games_info_data(games_info_data: dict, amiibo_id_to_name: dict[str, 
             usage_file.write(line)
 
     # Write game list + mapping files, fully sorted
-    _write_game_files("3DS", games_3ds, amiibo_id_to_name)
-    _write_game_files("WiiU", games_wii_u, amiibo_id_to_name)
-    _write_game_files("Switch", games_switch, amiibo_id_to_name)
-    _write_game_files("Switch2", games_switch2, amiibo_id_to_name)
+    write_amiibo_mapping(games_3ds, "game_3ds", "game_3ds_mapping", True, amiibo_id_to_name)
+    write_amiibo_mapping(games_wii_u, "game_wiiu", "game_wiiu_mapping", True, amiibo_id_to_name)
+    write_amiibo_mapping(games_switch, "game_switch", "game_switch_mapping", True, amiibo_id_to_name)
+    write_amiibo_mapping(games_switch2, "game_switch2", "game_switch2_mapping", True, amiibo_id_to_name)
 
 
 def main():

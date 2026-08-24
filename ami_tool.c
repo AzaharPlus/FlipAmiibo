@@ -261,7 +261,7 @@ AmiToolApp* ami_tool_alloc(void) {
         app->pages_names[i] = NULL;
     }
     for(size_t i = 0; i < AMI_TOOL_GENERATE_MAX_AMIIBO_CATEGORIES_NUMBER; i++) {
-        app->categories[i] = NULL;
+        app->categories[i] = furi_string_alloc();
     }
 	app->ids_line = furi_string_alloc();
     app->generate_selected_game = furi_string_alloc();
@@ -377,7 +377,7 @@ void ami_tool_free(AmiToolApp* app) {
     }
     for(size_t i = 0; i < AMI_TOOL_GENERATE_MAX_AMIIBO_CATEGORIES_NUMBER; i++) {
         if(app->categories[i]) {
-            free(app->categories[i]);
+            furi_string_free(app->categories[i]);
             app->categories[i] = NULL;
         }
     }
