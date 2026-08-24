@@ -24,14 +24,8 @@ static bool ami_tool_scene_generate_iterate_lines(
     bool skip_header,
     AmiToolGenerateLineCallback callback,
     void* context);
-static bool ami_tool_scene_generate_find_mapping_for_game(
-    AmiToolApp* app,
-    AmiToolGeneratePlatform platform,
-    const FuriString* game_name,
-    FuriString* out_ids);
 static bool ami_tool_scene_generate_fill_page_names(AmiToolApp* app);
 static bool ami_tool_scene_generate_load_name_page(AmiToolApp* app);
-static bool ami_tool_scene_generate_load_game_page(AmiToolApp* app);
 static bool ami_tool_scene_generate_load_page_entries(AmiToolApp* app);
 static bool ami_tool_scene_generate_show_cached_amiibo_menu(AmiToolApp* app, bool fromScratch);
 static void ami_tool_scene_generate_change_page(AmiToolApp* app, int direction);
@@ -181,8 +175,6 @@ static void ami_tool_scene_generate_commit_text_view(
     AmiToolGenerateState state,
     AmiToolGenerateState return_state);
 static const char* ami_tool_scene_generate_platform_label(AmiToolGeneratePlatform platform);
-static const char* ami_tool_scene_generate_platform_mapping_path(AmiToolGeneratePlatform platform);
-static void ami_tool_scene_generate_return_to_state(AmiToolApp* app, AmiToolGenerateState state);
 
 typedef struct {
     AmiToolApp* app;
@@ -785,77 +777,6 @@ static bool ami_tool_scene_generate_fill_page_names(AmiToolApp* app) {
     return ok;
 }
 
-static bool ami_tool_scene_generate_load_game_page(AmiToolApp* app) {
-    const size_t page_size =
-        AMI_TOOL_GENERATE_MAX_AMIIBO_PAGE_ITEMS ? AMI_TOOL_GENERATE_MAX_AMIIBO_PAGE_ITEMS : 1;
-    size_t start = app->generate_page_offset;
-    size_t end = start + page_size;
-
-    app->generate_page_entry_count = 0;
-
-	if(app->generate_platform != app->last_platform
-	|| furi_string_cmp(app->generate_selected_game, app->last_game) != 0) {
-		furi_string_reset(app->ids_line);
-		bool found = ami_tool_scene_generate_find_mapping_for_game(
-			app, app->generate_platform, app->generate_selected_game, app->ids_line);
-		if(!found) {
-			furi_string_reset(app->ids_line);
-			return false;
-		}
-		app->last_platform = app->generate_platform;
-		furi_string_set(app->last_game, app->generate_selected_game);
-	}
-
-    const char* raw = furi_string_get_cstr(app->ids_line);
-    size_t token_start = 0;
-    size_t index = 0;
-
-    while(raw[token_start] != '\0') {
-        size_t token_end = token_start;
-        while(raw[token_end] != '\0' && raw[token_end] != '|') {
-            token_end++;
-        }
-        size_t token_len = token_end - token_start;
-        while(token_len > 0 && isspace((unsigned char)raw[token_start])) {
-            token_start++;
-            token_len--;
-        }
-        while(token_len > 0 && isspace((unsigned char)raw[token_start + token_len - 1])) {
-            token_len--;
-        }
-
-        if(token_len > 0) {
-            if(index >= start && index < end && app->generate_page_entry_count < page_size) {
-                size_t slot = app->generate_page_entry_count;
-                FuriString* id_slot = app->generate_page_ids[slot];
-                FuriString* name_slot = app->generate_page_names[slot];
-                if(!id_slot || !name_slot) {
-                    app->generate_page_entry_count = slot;
-                    return false;
-                }
-                app->generate_page_entry_count++;
-                furi_string_set_strn(id_slot, raw + token_start, token_len);
-                furi_string_trim(id_slot);
-                furi_string_set(name_slot, furi_string_get_cstr(id_slot));
-            }
-            index++;
-        }
-
-        if(raw[token_end] == '\0') {
-            break;
-        }
-        token_start = token_end + 1;
-    }
-
-    app->generate_amiibo_count = index;
-    if(index == 0) {
-        return false;
-    }
-
-    ami_tool_scene_generate_fill_page_names(app);
-    return true;
-}
-
 static bool ami_tool_scene_generate_load_page_entries(AmiToolApp* app) {
     if(!app) {
         return false;
@@ -865,9 +786,6 @@ static bool ami_tool_scene_generate_load_page_entries(AmiToolApp* app) {
     switch(app->generate_list_source) {
     case AmiToolGenerateListSourceName:
         ok = ami_tool_scene_generate_load_name_page(app);
-        break;
-    case AmiToolGenerateListSourceGame:
-        ok = ami_tool_scene_generate_load_game_page(app);
         break;
     default:
         return false;
@@ -886,11 +804,7 @@ static bool ami_tool_scene_generate_load_page_entries(AmiToolApp* app) {
     if(app->generate_page_offset >= app->generate_amiibo_count) {
         size_t max_page = (app->generate_amiibo_count - 1) / page_size;
         app->generate_page_offset = max_page * page_size;
-        if(app->generate_list_source == AmiToolGenerateListSourceName) {
-            ok = ami_tool_scene_generate_load_name_page(app);
-        } else {
-            ok = ami_tool_scene_generate_load_game_page(app);
-        }
+        ok = ami_tool_scene_generate_load_name_page(app);
     }
 
     return ok;
@@ -1033,57 +947,6 @@ static void ami_tool_scene_generate_change_page(AmiToolApp* app, int direction) 
 			}
         }
     }
-}
-
-typedef struct {
-    const FuriString* game_name;
-    FuriString* result_ids;
-    bool found;
-} AmiToolGenerateMappingContext;
-
-static bool ami_tool_scene_generate_mapping_callback(
-    void* context,
-    size_t index,
-    FuriString* line) {
-    UNUSED(index);
-    AmiToolGenerateMappingContext* ctx = context;
-    const char* raw = furi_string_get_cstr(line);
-    const char* target = furi_string_get_cstr(ctx->game_name);
-    size_t target_len = furi_string_size(ctx->game_name);
-
-    if(strncmp(raw, target, target_len) == 0 && raw[target_len] == ':') {
-        const char* value = raw + target_len + 1;
-        while(*value == ' ' || *value == '\t') {
-            value++;
-        }
-        furi_string_set(ctx->result_ids, value);
-        ctx->found = true;
-        return false;
-    }
-
-    return true;
-}
-
-static bool ami_tool_scene_generate_find_mapping_for_game(
-    AmiToolApp* app,
-    AmiToolGeneratePlatform platform,
-    const FuriString* game_name,
-    FuriString* out_ids) {
-    const char* path = ami_tool_scene_generate_platform_mapping_path(platform);
-    if(!path) {
-        return false;
-    }
-
-    AmiToolGenerateMappingContext context = {
-        .game_name = game_name,
-        .result_ids = out_ids,
-        .found = false,
-    };
-
-    furi_string_reset(out_ids);
-    bool ok = ami_tool_scene_generate_iterate_lines(
-        app, path, true, ami_tool_scene_generate_mapping_callback, &context);
-    return ok && context.found;
 }
 
 static void ami_tool_scene_generate_show_amiibo_placeholder(AmiToolApp* app, size_t amiibo_index) {
@@ -1320,21 +1183,6 @@ static const char* ami_tool_scene_generate_platform_label(AmiToolGeneratePlatfor
     }
 }
 
-static const char* ami_tool_scene_generate_platform_mapping_path(AmiToolGeneratePlatform platform) {
-    switch(platform) {
-    case AmiToolGeneratePlatform3DS:
-        return APP_ASSETS_PATH("game_3ds_mapping.dat");
-    case AmiToolGeneratePlatformWiiU:
-        return APP_ASSETS_PATH("game_wiiu_mapping.dat");
-    case AmiToolGeneratePlatformSwitch:
-        return APP_ASSETS_PATH("game_switch_mapping.dat");
-    case AmiToolGeneratePlatformSwitch2:
-        return APP_ASSETS_PATH("game_switch2_mapping.dat");
-    default:
-        return NULL;
-    }
-}
-
 static void ami_tool_scene_generate_submenu_callback(void* context, uint32_t index) {
     AmiToolApp* app = context;
 
@@ -1396,38 +1244,6 @@ static void ami_tool_scene_generate_submenu_callback(void* context, uint32_t ind
 		ami_tool_scene_generate_show_category_list(app, true);
         break;
     default:
-        break;
-    }
-}
-
-static void ami_tool_scene_generate_return_to_state(AmiToolApp* app, AmiToolGenerateState state) {
-    switch(state) {
-    case AmiToolGenerateStateRootMenu:
-        ami_tool_scene_generate_show_root_menu(app);
-        break;
-    case AmiToolGenerateStatePlatformMenu:
-        ami_tool_scene_generate_show_platform_menu(app);
-        break;
-    case AmiToolGenerateStateGameList:
-        ami_tool_scene_generate_show_games_menu(app);
-        break;
-    case AmiToolGenerateStateAmiiboList:
-        if(app->generate_list_source == AmiToolGenerateListSourceName) {
-            if(!ami_tool_scene_generate_show_cached_amiibo_menu(app, true)) {
-                ami_tool_scene_generate_show_root_menu(app);
-            }
-        } else {
-            if(!ami_tool_scene_generate_show_cached_amiibo_menu(app, true)) {
-                if(app->generate_game_count > 0) {
-                    ami_tool_scene_generate_show_games_menu(app);
-                } else {
-                    ami_tool_scene_generate_show_platform_menu(app);
-                }
-            }
-        }
-        break;
-    default:
-        ami_tool_scene_generate_show_root_menu(app);
         break;
     }
 }
@@ -1563,8 +1379,7 @@ bool ami_tool_scene_generate_on_event(void* context, SceneManagerEvent event) {
 			return true;
         case AmiToolGenerateStateAmiiboPlaceholder:
         case AmiToolGenerateStateMessage:
-            ami_tool_scene_generate_return_to_state(app, app->generate_return_state);
-            return true;
+			ami_tool_scene_generate_show_root_menu(app);
         default:
             break;
         }
