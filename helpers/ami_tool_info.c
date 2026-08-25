@@ -406,9 +406,11 @@ static bool ami_tool_usage_lookup_entry(
     FuriString* line = furi_string_alloc();
 
     if(storage_file_open(file, APP_ASSETS_PATH("amiibo_usage.dat"), FSAM_READ, FSOM_OPEN_EXISTING)) {
-        bool in_data_section = false;
+        bool in_data_section = true;
         uint8_t buffer[AMI_TOOL_INFO_READ_BUFFER];
-
+		
+		storage_file_seek(file, app->usage_offset, true);
+		
         while(true) {
             size_t read = storage_file_read(file, buffer, sizeof(buffer));
             if(read == 0) break;
@@ -757,12 +759,10 @@ static void ami_tool_info_format_entry(
     }
     memcpy(temp, data, data_len + 1);
 
+	const char* offset = temp;
     const char* fields[6] = {0};
     size_t field_count = 0;
     char* cursor = temp;
-    if(*cursor != '\0') {
-        fields[field_count++] = cursor;
-    }
 
     while(*cursor && field_count < 6) {
         if(*cursor == '|') {
@@ -774,6 +774,8 @@ static void ami_tool_info_format_entry(
             cursor++;
         }
     }
+	
+	app->usage_offset = strtoul(offset, NULL, 10);
 
     const char* name = (field_count > 0 && fields[0]) ? fields[0] : "Unknown";
     const char* character = (field_count > 1 && fields[1]) ? fields[1] : "Unknown";

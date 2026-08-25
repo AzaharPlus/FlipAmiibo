@@ -129,36 +129,7 @@ def process_amiibo_data(amiibo_data: dict) -> dict[str, str]:
     write_amiibo_mapping(amiibo_amiibo_series_mapping, "amiibo_series", "amiibo_series_mapping", True, amiibo_id_to_name)
     write_amiibo_mapping(amiibo_type_mapping, "amiibo_types", "amiibo_type_mapping", False, amiibo_id_to_name)
 
-    with open("files/amiibo.dat", "w", newline='') as amiibo_file:
-        amiibo_file.write("Filetype: AmiTool Amiibo DB\n")
-        amiibo_file.write("Version: 1\n")
-        amiibo_file.write(f"AmiiboCount: {len(amiibos)}\n")
-        amiibo_file.write("\n")
-
-        for amiibo_id, amiibo_str in amiibo_strs.items():
-            amiibo_file.write(f"{amiibo_id}: {amiibo_str}\n")
-
-    with open("files/amiibo_name.dat", "w", newline='') as amiibo_name_file:
-        with open("files/amiibo.dat", "r") as amiibo_file:
-            content = amiibo_file.read()
-            amiibo_name_file.write("Filetype: AmiTool Amiibo Name DB\n")
-            amiibo_name_file.write("Version: 1\n")
-            amiibo_name_file.write(f"AmiiboCount: {len(amiibos)}\n")
-            amiibo_name_file.write("\n")
-
-            for amiibo_name, item in amiibo_mapping_strs.items():
-                item = sorted(item, key=lambda d: (d[1]))
-                for it in item:
-                    tofind = it[1] + ": "
-                    offset = content.find(tofind)   # + len(tofind)
-                    raw = content[:offset].encode()
-                    offset = len(raw)
-                    if len(item) > 1:
-                        amiibo_name_file.write(f"{amiibo_name} [{it[0]}]: {it[1]}|{offset}\n")
-                    else:
-                        amiibo_name_file.write(f"{amiibo_name}: {it[1]}|{offset}\n")
-
-    return amiibo_id_to_name
+    return amiibo_id_to_name, amiibo_strs, amiibo_mapping_strs
 
 
 def _generate_usage_string(info: dict, platform: str) -> str:
@@ -172,56 +143,6 @@ def _generate_usage_string(info: dict, platform: str) -> str:
             usage_str += f"^{usage['Usage']}*{usage.get('write', 'False')}"
 
     return usage_str
-
-
-def _sort_ids_by_amiibo_name(
-    amiibo_ids: list[str], amiibo_id_to_name: dict[str, str]
-) -> list[str]:
-    """
-    Sort amiibo IDs by their amiibo name (stable fallback to ID).
-    """
-    amiibo_ids = list(dict.fromkeys(amiibo_ids))
-    return sorted(
-        amiibo_ids,
-        key=lambda aid: (amiibo_id_to_name.get(aid, "").casefold(), aid.casefold()),
-    )
-
-
-def _write_game_files(
-    console: str,
-    games_map: dict[str, list[str]],
-    amiibo_id_to_name: dict[str, str],
-):
-    """
-    Write both game list and mapping files for a given console, fully sorted.
-    """
-    # Ensure each game's amiibo ID list is sorted by amiibo name
-    for game_name, ids in games_map.items():
-        games_map[game_name] = _sort_ids_by_amiibo_name(ids, amiibo_id_to_name)
-
-    # Sort games by name for deterministic UI streaming
-    sorted_game_names = sorted(games_map.keys(), key=lambda n: n.casefold())
-
-    with open(f"files/game_{console.lower()}.dat", "w") as games_file:
-        games_file.write("Filetype: AmiTool Games DB\n")
-        games_file.write("Version: 1\n")
-        games_file.write(f"Console: {console}\n")
-        games_file.write(f"GameCount: {len(games_map)}\n")
-        games_file.write("\n")
-
-        for game_name in sorted_game_names:
-            games_file.write(f"{game_name}\n")
-
-    with open(f"files/game_{console.lower()}_mapping.dat", "w") as mapping_file:
-        mapping_file.write("Filetype: AmiTool Games Mapping DB\n")
-        mapping_file.write("Version: 1\n")
-        mapping_file.write(f"Console: {console}\n")
-        mapping_file.write(f"GameCount: {len(games_map)}\n")
-        mapping_file.write("\n")
-
-        for game_name in sorted_game_names:
-            mapping_file.write(f"{game_name}: {'|'.join(games_map[game_name])}\n")
-
 
 def process_games_info_data(games_info_data: dict, amiibo_id_to_name: dict[str, str]):
     """
@@ -297,7 +218,7 @@ def process_games_info_data(games_info_data: dict, amiibo_id_to_name: dict[str, 
     # Sort amiibo_usage.dat by amiibo name (then ID for stability)
     usage_lines.sort(key=lambda t: (t[0], t[1].casefold()))
 
-    with open("files/amiibo_usage.dat", "w") as usage_file:
+    with open("files/amiibo_usage.dat", "w", newline='') as usage_file:
         usage_file.write("Filetype: AmiTool Usage DB\n")
         usage_file.write("Version: 1\n")
         usage_file.write(f"AmiiboCount: {len(games_info_data.get('amiibos', {}))}\n")
@@ -320,9 +241,42 @@ def main():
     amiibo_data = fetch_json(AMIIBO_JSON_URL)
     games_info_data = fetch_json(GAMES_INFO_JSON_URL)
 
-    amiibo_id_to_name = process_amiibo_data(amiibo_data)
+    amiibo_id_to_name, amiibo_strs, amiibo_mapping_strs = process_amiibo_data(amiibo_data)
     process_games_info_data(games_info_data, amiibo_id_to_name)
 
+    with open("files/amiibo_usage.dat", "r") as usage_file:
+        content = usage_file.read()
+
+        with open("files/amiibo.dat", "w", newline='') as amiibo_file:
+            amiibo_file.write("Filetype: AmiTool Amiibo DB\n")
+            amiibo_file.write("Version: 1\n")
+            amiibo_file.write(f"AmiiboCount: {len(amiibo_id_to_name)}\n")
+            amiibo_file.write("\n")
+
+            for amiibo_id, amiibo_str in amiibo_strs.items():
+                offset = content.find(amiibo_id)
+                offset = len(content[:offset].encode())
+                amiibo_file.write(f"{amiibo_id}: {offset}|{amiibo_str}\n")
+
+    with open("files/amiibo_name.dat", "w", newline='') as amiibo_name_file:
+        with open("files/amiibo.dat", "r") as amiibo_file:
+            content = amiibo_file.read()
+            amiibo_name_file.write("Filetype: AmiTool Amiibo Name DB\n")
+            amiibo_name_file.write("Version: 1\n")
+            amiibo_name_file.write(f"AmiiboCount: {len(amiibo_id_to_name)}\n")
+            amiibo_name_file.write("\n")
+
+            for amiibo_name, item in amiibo_mapping_strs.items():
+                item = sorted(item, key=lambda d: (d[1]))
+                for it in item:
+                    tofind = it[1] + ": "
+                    offset = content.find(tofind)
+                    raw = content[:offset].encode()
+                    offset = len(raw)
+                    if len(item) > 1:
+                        amiibo_name_file.write(f"{amiibo_name} [{it[0]}]: {it[1]}|{offset}\n")
+                    else:
+                        amiibo_name_file.write(f"{amiibo_name}: {it[1]}|{offset}\n")
 
 if __name__ == "__main__":
     main()
