@@ -334,6 +334,7 @@ static bool ami_tool_scene_amiibo_link_finalize(AmiToolApp* app) {
         id_arg = id_hex;
     }
 
+	app->last_offset = 0;
     ami_tool_info_show_page(app, id_arg, true);
     return true;
 }

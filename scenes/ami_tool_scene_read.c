@@ -317,5 +317,6 @@ static void ami_tool_scene_read_show_info(AmiToolApp* app) {
     char id_hex[17] = {0};
     bool has_id =
         ami_tool_extract_amiibo_id(app->tag_data_valid ? app->tag_data : NULL, id_hex, sizeof(id_hex));
+	app->last_offset = 0;
     ami_tool_info_show_page(app, has_id ? id_hex : NULL, true);
 }

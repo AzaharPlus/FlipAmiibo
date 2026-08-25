@@ -243,6 +243,13 @@ static bool ami_tool_info_lookup_entry(
     const char* id_hex,
     FuriString* result,
     bool* asset_error) {
+	
+	if(app->last_offset == 0) {
+		FuriString* name = furi_string_alloc();
+		ami_tool_info_get_name_for_id(app, id_hex, name);
+		furi_string_free(name);
+	}
+	
     furi_assert(app);
     furi_assert(result);
     if(asset_error) {
@@ -283,9 +290,11 @@ static bool ami_tool_info_lookup_entry(
     FuriString* line = furi_string_alloc();
 
     if(storage_file_open(file, APP_ASSETS_PATH("amiibo.dat"), FSAM_READ, FSOM_OPEN_EXISTING)) {
-        bool in_data_section = false;
+        bool in_data_section = true;
         uint8_t buffer[AMI_TOOL_INFO_READ_BUFFER];
-
+		
+		storage_file_seek(file, app->last_offset, true);
+		
         while(true) {
             size_t read = storage_file_read(file, buffer, sizeof(buffer));
             if(read == 0) break;
@@ -788,43 +797,71 @@ static void ami_tool_info_format_entry(
 }
 
 bool ami_tool_info_get_name_for_id(AmiToolApp* app, const char* id_hex, FuriString* out_name) {
+	if(out_name) {
+		furi_string_reset(out_name);
+	}
+		
     if(!app || !out_name || !id_hex || id_hex[0] == '\0') {
-        if(out_name) {
-            furi_string_reset(out_name);
-        }
         return false;
     }
+	
+	size_t id_len = strlen(id_hex);
+	char* id_lower = malloc(id_len + 1);
+    for(size_t i = 0; i < id_len; i++) {
+        id_lower[i] = (char)tolower((unsigned char)id_hex[i]);
+    }
+    id_lower[id_len] = '\0';
 
-    FuriString* entry = furi_string_alloc();
-    bool asset_error = false;
-    bool found = ami_tool_info_lookup_entry(app, id_hex, entry, &asset_error);
+	FuriString* line = furi_string_alloc();
+	File* file = storage_file_alloc(app->storage);
+	const char* path = APP_ASSETS_PATH("amiibo_name.dat");
+	
+	if(storage_file_open(file, path, FSAM_READ, FSOM_OPEN_EXISTING)) {
+        uint8_t buffer[64];
+		FuriString* name = furi_string_alloc();
+		FuriString* id = furi_string_alloc();
+		bool finished = false;
 
-    if(found) {
-        const char* raw = furi_string_get_cstr(entry);
-        const char* data = raw;
-        const char* colon = strchr(raw, ':');
-        if(colon) {
-            data = colon + 1;
-            while(*data == ' ') {
-                data++;
+        while(!finished) {
+            size_t read = storage_file_read(file, buffer, sizeof(buffer));
+            if(read == 0) break;
+
+            for(size_t i = 0; i < read; i++) {
+                char ch = (char)buffer[i];
+                if(ch == '\r') {
+                    continue;
+                } else if(ch == ':') {
+					furi_string_set(name, furi_string_get_cstr(line));
+					furi_string_reset(line);
+				} else if(ch == '|') {
+					furi_string_set(id, furi_string_get_cstr(line) + 1);
+					furi_string_reset(line);
+				} else if(ch == '\n') {
+					if(!furi_string_empty(line) && !furi_string_empty(id) && !furi_string_empty(name)) {
+						if(strcmp(id_lower, furi_string_get_cstr(id)) == 0) {
+							furi_string_set(out_name, furi_string_get_cstr(name));
+							app->last_offset = strtoul(furi_string_get_cstr(line), NULL, 10);
+							finished = true;
+							break;
+						}
+					}
+                    furi_string_reset(line);
+                } else {
+                    furi_string_push_back(line, ch);
+                }
             }
         }
-        const char* end = data;
-        while(*end && *end != '|' && *end != '\r' && *end != '\n') {
-            end++;
-        }
-        if(end > data) {
-            furi_string_reset(out_name);
-            furi_string_cat_printf(out_name, "%.*s", (int)(end - data), data);
-        } else {
-            furi_string_set(out_name, id_hex);
-        }
-    } else {
-        furi_string_set(out_name, id_hex);
-    }
+		
+		furi_string_free(name);
+		furi_string_free(id);
+		storage_file_close(file);
+	}
 
-    furi_string_free(entry);
-    return found && furi_string_size(out_name) > 0;
+	furi_string_free(line);
+	storage_file_free(file);
+    free(id_lower);
+
+    return furi_string_size(out_name) > 0;
 }
 
 static void ami_tool_info_show_text_info(AmiToolApp* app, const char* message) {

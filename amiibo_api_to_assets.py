@@ -27,7 +27,6 @@ def write_amiibo_mapping(mapping, keys_file, mappings_file, sortKeys, amiibo_id_
         amiibo_file.write("\n")
 
         for key_name, id_list in mapping.items():
-            key_name = key_name.replace("–", "-").replace("é", "e")     # for pokkén and '–' in xenoblade on switch2
             id_list = list(dict.fromkeys(id_list))		# remove duplicates
             id_list = sorted(id_list)
             id_list = sorted(id_list, key=lambda k: amiibo_id_to_name[k].casefold())
@@ -54,9 +53,11 @@ def write_amiibo_mapping(mapping, keys_file, mappings_file, sortKeys, amiibo_id_
             amiibo_file.write("\n")
 
             for key_name in keys:
-                key_name = key_name.replace("–", "-").replace("é", "e")     # for pokkén and '–' in xenoblade on switch2
-                toFind = "\n" + key_name + "~"
-                amiibo_file.write(f"{key_name}~ {content.find(toFind) + len(toFind)}\n")
+                tofind = "\n" + key_name + "~"
+                offset = content.find(tofind) + len(tofind)
+                raw = content[:offset].encode()
+                offset = len(raw)
+                amiibo_file.write(f"{key_name}~ {offset}\n")
 
 def process_amiibo_data(amiibo_data: dict) -> dict[str, str]:
     """
@@ -128,7 +129,7 @@ def process_amiibo_data(amiibo_data: dict) -> dict[str, str]:
     write_amiibo_mapping(amiibo_amiibo_series_mapping, "amiibo_series", "amiibo_series_mapping", True, amiibo_id_to_name)
     write_amiibo_mapping(amiibo_type_mapping, "amiibo_types", "amiibo_type_mapping", False, amiibo_id_to_name)
 
-    with open("files/amiibo.dat", "w") as amiibo_file:
+    with open("files/amiibo.dat", "w", newline='') as amiibo_file:
         amiibo_file.write("Filetype: AmiTool Amiibo DB\n")
         amiibo_file.write("Version: 1\n")
         amiibo_file.write(f"AmiiboCount: {len(amiibos)}\n")
@@ -137,19 +138,25 @@ def process_amiibo_data(amiibo_data: dict) -> dict[str, str]:
         for amiibo_id, amiibo_str in amiibo_strs.items():
             amiibo_file.write(f"{amiibo_id}: {amiibo_str}\n")
 
-    with open("files/amiibo_name.dat", "w") as amiibo_name_file:
-        amiibo_name_file.write("Filetype: AmiTool Amiibo Name DB\n")
-        amiibo_name_file.write("Version: 1\n")
-        amiibo_name_file.write(f"AmiiboCount: {len(amiibos)}\n")
-        amiibo_name_file.write("\n")
+    with open("files/amiibo_name.dat", "w", newline='') as amiibo_name_file:
+        with open("files/amiibo.dat", "r") as amiibo_file:
+            content = amiibo_file.read()
+            amiibo_name_file.write("Filetype: AmiTool Amiibo Name DB\n")
+            amiibo_name_file.write("Version: 1\n")
+            amiibo_name_file.write(f"AmiiboCount: {len(amiibos)}\n")
+            amiibo_name_file.write("\n")
 
-        for amiibo_name, item in amiibo_mapping_strs.items():
-            item = sorted(item, key=lambda d: (d[1]))
-            for it in item:
+            for amiibo_name, item in amiibo_mapping_strs.items():
+                item = sorted(item, key=lambda d: (d[1]))
+                for it in item:
+                    tofind = it[1] + ": "
+                    offset = content.find(tofind)   # + len(tofind)
+                    raw = content[:offset].encode()
+                    offset = len(raw)
                     if len(item) > 1:
-                        amiibo_name_file.write(f"{amiibo_name} [{it[0]}]: {it[1]}\n")
+                        amiibo_name_file.write(f"{amiibo_name} [{it[0]}]: {it[1]}|{offset}\n")
                     else:
-                        amiibo_name_file.write(f"{amiibo_name}: {it[1]}\n")
+                        amiibo_name_file.write(f"{amiibo_name}: {it[1]}|{offset}\n")
 
     return amiibo_id_to_name
 

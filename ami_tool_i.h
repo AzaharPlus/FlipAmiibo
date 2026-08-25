@@ -267,6 +267,8 @@ struct AmiToolApp {
     FuriString* categories[AMI_TOOL_GENERATE_MAX_AMIIBO_CATEGORIES_NUMBER];
 	const char* mapping_filename;
     size_t offsets[AMI_TOOL_GENERATE_MAX_AMIIBO_CATEGORIES_NUMBER];
+    size_t amiibo_offsets[AMI_TOOL_GENERATE_MAX_AMIIBO_PAGE_NUMBER];
+	size_t last_offset;
     FuriString* generate_page_names[AMI_TOOL_GENERATE_MAX_AMIIBO_PAGE_ITEMS];
     FuriString* generate_page_ids[AMI_TOOL_GENERATE_MAX_AMIIBO_PAGE_ITEMS];
     FuriString* generate_selected_game;

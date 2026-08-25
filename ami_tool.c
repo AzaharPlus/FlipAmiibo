@@ -114,7 +114,8 @@ static void file_browser_select_callback(void* context) {
 			id_hex[2*i +1] = hex[id_bin[i] & 0x0f];
 		}
 		
-        ami_tool_info_show_page(app, id_hex, false);
+        app->last_offset = 0;
+		ami_tool_info_show_page(app, id_hex, false);
         app->saved_info_visible = true;
     } while(false);
 
@@ -263,6 +264,7 @@ AmiToolApp* ami_tool_alloc(void) {
     for(size_t i = 0; i < AMI_TOOL_GENERATE_MAX_AMIIBO_CATEGORIES_NUMBER; i++) {
         app->categories[i] = furi_string_alloc();
     }
+	app-> last_offset = 0;
 	app->ids_line = furi_string_alloc();
     app->generate_selected_game = furi_string_alloc();
     app->last_game = furi_string_alloc();
