@@ -257,12 +257,16 @@ AmiToolApp* ami_tool_alloc(void) {
         app->generate_page_names[i] = furi_string_alloc();
         app->generate_page_ids[i] = furi_string_alloc();
     }
-    for(size_t i = 0; i < 50; i++) {
+    for(size_t i = 0; i < AMI_TOOL_GENERATE_MAX_AMIIBO_PAGE_NUMBER; i++) {
         app->pages_names[i] = NULL;
+    }
+    for(size_t i = 0; i < AMI_TOOL_GENERATE_MAX_AMIIBO_CATEGORIES_NUMBER; i++) {
+        app->categories[i] = NULL;
     }
 	app->ids_line = furi_string_alloc();
     app->generate_selected_game = furi_string_alloc();
     app->last_game = furi_string_alloc();
+    app->last_category = furi_string_alloc();
     app->saved_page_offset = 0;
     app->saved_page_entry_count = 0;
     app->saved_has_next_page = false;
@@ -353,6 +357,10 @@ void ami_tool_free(AmiToolApp* app) {
         furi_string_free(app->last_game);
         app->last_game = NULL;
     }
+    if(app->last_category) {
+        furi_string_free(app->last_category);
+        app->last_category = NULL;
+    }
     if(app->ids_line) {
         furi_string_free(app->ids_line);
         app->ids_line = NULL;
@@ -367,7 +375,13 @@ void ami_tool_free(AmiToolApp* app) {
             app->generate_page_ids[i] = NULL;
         }
     }
-    for(size_t i = 0; i < 50; i++) {
+    for(size_t i = 0; i < AMI_TOOL_GENERATE_MAX_AMIIBO_CATEGORIES_NUMBER; i++) {
+        if(app->categories[i]) {
+            free(app->categories[i]);
+            app->categories[i] = NULL;
+        }
+    }
+    for(size_t i = 0; i < AMI_TOOL_GENERATE_MAX_AMIIBO_PAGE_NUMBER; i++) {
         if(app->pages_names[i]) {
             free(app->pages_names[i]);
             app->pages_names[i] = NULL;

@@ -23,6 +23,8 @@
 #define AMI_TOOL_RETAIL_KEY_SIZE (160U)
 #define AMI_TOOL_RETAIL_KEY_FILENAME "key_retail.bin"
 #define AMI_TOOL_GENERATE_MAX_AMIIBO_PAGE_ITEMS (32U)
+#define AMI_TOOL_GENERATE_MAX_AMIIBO_PAGE_NUMBER (50U)
+#define AMI_TOOL_GENERATE_MAX_AMIIBO_CATEGORIES_NUMBER (60U)
 #define AMI_TOOL_SAVED_MAX_PAGE_ITEMS (12U)
 #define AMI_TOOL_NFC_FOLDER ANY_PATH("nfc")
 
@@ -109,6 +111,11 @@ typedef enum {
     AmiToolGenerateStateRootMenu,
     AmiToolGenerateStatePlatformMenu,
     AmiToolGenerateStateGameList,
+    AmiToolGenerateStateTypeList,
+    AmiToolGenerateStateAmiiboSeriesList,
+    AmiToolGenerateStateGameSeriesList,
+    AmiToolGenerateStateCatPagesList,
+    AmiToolGenerateStateCatList,
     AmiToolGenerateStateAmiiboList,
     AmiToolGenerateStateAmiiboPreList,
     AmiToolGenerateStateAmiiboPlaceholder,
@@ -126,6 +133,9 @@ typedef enum {
 typedef enum {
     AmiToolGenerateListSourceGame,
     AmiToolGenerateListSourceName,
+    AmiToolGenerateListSourceType,
+    AmiToolGenerateListSourceAmiiboSeries,
+    AmiToolGenerateListSourceGameSeries,
 } AmiToolGenerateListSource;
 
 /* Custom events from main menu */
@@ -253,16 +263,21 @@ struct AmiToolApp {
     size_t generate_game_count;
     size_t generate_amiibo_count;
     size_t generate_page_entry_count;
-    char* pages_names[50];
+    char* pages_names[AMI_TOOL_GENERATE_MAX_AMIIBO_PAGE_NUMBER];
+    char* categories[AMI_TOOL_GENERATE_MAX_AMIIBO_CATEGORIES_NUMBER];
+	const char* mapping_filename;
+    size_t offsets[AMI_TOOL_GENERATE_MAX_AMIIBO_CATEGORIES_NUMBER];
     FuriString* generate_page_names[AMI_TOOL_GENERATE_MAX_AMIIBO_PAGE_ITEMS];
     FuriString* generate_page_ids[AMI_TOOL_GENERATE_MAX_AMIIBO_PAGE_ITEMS];
     FuriString* generate_selected_game;
     FuriString* last_game;
+    FuriString* last_category;
     size_t saved_page_offset;
     size_t saved_page_entry_count;
     bool saved_has_next_page;
     bool saved_info_visible;
 	size_t saved_index;
+	size_t saved_category;
     FuriString* saved_page_display[AMI_TOOL_SAVED_MAX_PAGE_ITEMS];
     FuriString* saved_page_paths[AMI_TOOL_SAVED_MAX_PAGE_ITEMS];
     FuriString* saved_page_ids[AMI_TOOL_SAVED_MAX_PAGE_ITEMS];

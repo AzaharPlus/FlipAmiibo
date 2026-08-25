@@ -10596,10 +10596,10 @@
 	},
 	"types":
 	{
-		"0x01": "Card",
 		"0x00": "Figure",
-		"0x03": "Band",
+		"0x01": "Card",
 		"0x02": "Yarn",
+		"0x03": "Band",
 		"0x04": "Block"
 	},
 	"characters":

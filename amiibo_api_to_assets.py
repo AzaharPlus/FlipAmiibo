@@ -16,6 +16,44 @@ def fetch_json(url: str) -> dict:
     with open(url, 'r') as file:
         return json.load(file)
 
+def write_amiibo_mapping(mapping, keys_file, mappings_file, sortKeys, amiibo_id_to_name):
+    keys = list(mapping.keys())
+    mapping = dict(sorted(mapping.items(), key=lambda k: len(k[1])))
+
+    with open("files/" + mappings_file + ".dat", "w", newline='') as amiibo_file:
+        amiibo_file.write("Filetype: AmiTool Amiibo DB\n")
+        amiibo_file.write("Version: 1\n")
+        amiibo_file.write(f"{mappings_file}: {len(mapping)}\n")
+        amiibo_file.write("\n")
+
+        for key_name, id_list in mapping.items():
+            id_list = sorted(id_list)
+            id_list = sorted(id_list, key=lambda k: amiibo_id_to_name[k].casefold())
+            number = str(len(id_list))
+            amiibo_file.write(f"{key_name}: {number:4} ")
+            first = True
+            for aid in id_list:
+                if not first:
+                    amiibo_file.write("|")
+                amiibo_file.write(f"{aid}")
+                first = False
+            amiibo_file.write("\n")
+
+    if(sortKeys):
+        keys = sorted(keys, key=lambda k: k.casefold())
+
+    with open("files/" + mappings_file + ".dat", "r") as map_file:
+        content = map_file.read()
+
+        with open("files/"+ keys_file +".dat", "w", newline='') as amiibo_file:
+            amiibo_file.write("Filetype: AmiTool Amiibo DB\n")
+            amiibo_file.write("Version: 1\n")
+            amiibo_file.write(f"{keys_file}: {len(mapping)}\n")
+            amiibo_file.write("\n")
+
+            for key_name in keys:
+                toFind = "\n" + key_name + ":"
+                amiibo_file.write(f"{key_name}: {content.find(toFind) + len(toFind)}\n")
 
 def process_amiibo_data(amiibo_data: dict) -> dict[str, str]:
     """
@@ -35,18 +73,34 @@ def process_amiibo_data(amiibo_data: dict) -> dict[str, str]:
     amiibo_strs: dict[str, str] = {}
     amiibo_mapping_strs: dict[str, list[tuple[str, str]]] = {}
     amiibo_id_to_name: dict[str, str] = {}
+    amiibo_game_series_mapping: dict[str, list[str]] = {}
+    amiibo_amiibo_series_mapping: dict[str, list[str]] = {}
+    amiibo_type_mapping: dict[str, list[str]] = {}
+
+    for game_series_id, game_series_name in game_series.items():
+        amiibo_game_series_mapping[game_series_name] = []
+
+    for amiibo_series_id, amiibo_series_name in amiibo_series.items():
+        amiibo_amiibo_series_mapping[amiibo_series_name] = []
+
+    for type_id, type_name in types.items():
+        amiibo_type_mapping[type_name] = []
 
     for amiibo_id, amiibo in amiibos.items():
         amiibo_id_clean = amiibo_id[2:]  # Remove "0x" prefix
-        name = amiibo.get("name", "Unknown")
+        name = amiibo.get("name", "Unknown").replace("É", "E")  # for Étoile
 
         # Save for later sorting (e.g. game mapping files)
         amiibo_id_to_name[amiibo_id_clean] = name
 
-        character = characters.get(f"0x{amiibo_id_clean[0:4]}", "Unknown")
+        character = characters.get(f"0x{amiibo_id_clean[0:4]}", "Unknown").replace("É", "E")  # for Étoile
         amiibo_series_name = amiibo_series.get(f"0x{amiibo_id_clean[12:14]}", "Unknown")
         game_series_name = game_series.get(f"0x{amiibo_id_clean[0:3]}", "Unknown")
         type_name = types.get(f"0x{amiibo_id_clean[6:8]}", "Unknown")
+
+        amiibo_game_series_mapping[game_series_name].append(amiibo_id_clean)
+        amiibo_amiibo_series_mapping[amiibo_series_name].append(amiibo_id_clean)
+        amiibo_type_mapping[type_name].append(amiibo_id_clean)
 
         release_info = amiibo.get("release", {})
         release_info_strs = []
@@ -66,6 +120,10 @@ def process_amiibo_data(amiibo_data: dict) -> dict[str, str]:
     # Already sorted as you had
     amiibo_strs = dict(sorted(amiibo_strs.items()))
     amiibo_mapping_strs = dict(sorted(amiibo_mapping_strs.items(), key=lambda k: k[0].casefold()))
+
+    write_amiibo_mapping(amiibo_game_series_mapping, "game_series", "game_series_mapping", True, amiibo_id_to_name)
+    write_amiibo_mapping(amiibo_amiibo_series_mapping, "amiibo_series", "amiibo_series_mapping", True, amiibo_id_to_name)
+    write_amiibo_mapping(amiibo_type_mapping, "amiibo_types", "amiibo_type_mapping", False, amiibo_id_to_name)
 
     with open("files/amiibo.dat", "w") as amiibo_file:
         amiibo_file.write("Filetype: AmiTool Amiibo DB\n")
