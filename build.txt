@@ -1,0 +1,3 @@
+
+ufbt launch
+pause
